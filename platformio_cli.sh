@@ -60,7 +60,7 @@ validate_platformio_ini() {
 # Better Board Detection: Detect connected boards from various paths
 detect_board() {
 	info "Detecting connected boards..."
-	devices=($(ls /dev/ttyUSB* 2>/dev/null || ls /dev/ttyACM* 2>/dev/null || ls /dev/serial/by-id/* 2>/dev/null))
+	devices=($(pio device list --serial | grep -oP '(?<= - ).*' | awk '{print $1}'))
 	if [ ${#devices[@]} -eq 0 ]; then
 		error "No connected boards found."
 		return 1
@@ -127,7 +127,8 @@ select_environment() {
 			selected_env=$(get_user_input "Enter the environment name: ")
 		fi
 	else
-		echo "No boards detected. Please select an environment:"
+		warn "No boards detected."
+		info "Available environments:"
 		echo "$environments"
 		selected_env=$(get_user_input "Enter the environment name: ")
 	fi
@@ -147,6 +148,11 @@ init_project() {
 	list_environments
 }
 
+get_platform_for_env() {
+	local env_name="$1"
+	grep -A 5 "\[env:$env_name\]" platformio.ini | grep "platform" | head -n1 | cut -d= -f2 | tr -d ' '
+}
+
 # Function to build the PlatformIO project
 build_project() {
 	select_environment
@@ -156,6 +162,57 @@ build_project() {
 		exit 1
 	fi
 	generate_compile_commands
+
+	# If the environment is native, offer to run the binary
+	if [ "$(get_platform_for_env "$selected_env")" == "native" ]; then
+		ask_to_run_native_binary
+	fi
+}
+
+ask_to_run_native_binary() {
+	local run_binary
+	run_binary=$(get_user_input "Do you want to run the native binary now? (y/n): ")
+	if [[ "$run_binary" =~ ^[Yy]$ ]]; then
+		run_native_binary
+	fi
+}
+
+run_native_binary() {
+	# Prompt user to select an environment
+	select_environment
+
+	# Check if the selected environment is native
+	if [ "$(get_platform_for_env "$selected_env")" == "native" ]; then
+		info "Running the native binary for environment: $selected_env..."
+		local binary_path=".pio/build/$selected_env/program"
+
+		# Check if the compiled binary exists
+		if [ -f "$binary_path" ]; then
+			info "Executing $binary_path"
+			"$binary_path"
+		else
+			error "Compiled binary not found at $binary_path"
+			# Ask the user if they want to build the project
+			local build_choice
+			build_choice=$(get_user_input "Would you like to build the project first? (y/n): ")
+			if [[ "$build_choice" =~ ^[Yy]$ ]]; then
+				# Build the project
+				build_project
+				# After building, check again if the binary exists
+				if [ -f "$binary_path" ]; then
+					info "Executing $binary_path"
+					"$binary_path"
+				else
+					error "Build failed or binary still not found."
+					exit 1
+				fi
+			else
+				error "Cannot run the binary without building it first."
+			fi
+		fi
+	else
+		error "Selected environment '$selected_env' is not a native environment."
+	fi
 }
 
 # Function to generate compile_commands.json
@@ -181,10 +238,14 @@ generate_compile_commands() {
 # Function to upload firmware
 upload_firmware() {
 	select_environment
-	info "Uploading firmware to the device for environment: $selected_env..."
-	if ! pio run -t upload -e "$selected_env"; then
-		error "Upload failed."
-		exit 1
+	if [ "$(get_platform_for_env "$selected_env")" == "native" ]; then
+		warn "Upload is not applicable for the native environment."
+	else
+		info "Uploading firmware to the device for environment: $selected_env..."
+		if ! pio run -t upload -e "$selected_env"; then
+			error "Upload failed."
+			exit 1
+		fi
 	fi
 }
 
@@ -290,7 +351,8 @@ menu() {
 	echo "7. Install project dependencies"
 	echo "8. Manage platforms and libraries"
 	echo "9. Update PlatformIO, libraries, and platforms"
-	echo "10. Exit"
+	echo "10. Run native binary"
+	echo "11. Exit"
 	choice=$(get_user_input "Choose an option: ")
 
 	case $choice in
@@ -303,7 +365,8 @@ menu() {
 	7) install_dependencies ;;
 	8) manage_platforms_and_libraries ;;
 	9) update_all ;;
-	10) exit 0 ;;
+	10) run_native_binary ;;
+	11) exit 0 ;;
 	*) error "Invalid option" ;;
 	esac
 }
