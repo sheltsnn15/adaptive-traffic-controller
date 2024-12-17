@@ -1,7 +1,11 @@
 #ifndef TRAFFIC_CONTROL_H_ /* Include guard */
 #define TRAFFIC_CONTROL_H_
 
-// Define Traffic Light Output Constants
+#include "driver/gpio.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+
+// Traffic Light Output Constants
 #define GREEN_NS_RED_EW 0x21     // North-South Green, East-West Red
 #define YELLOW_NS_RED_EW 0x22    // North-South Yellow, East-West Red
 #define RED_NS_GREEN_EW 0x0C     // North-South Red, East-West Green
@@ -54,6 +58,9 @@ extern unsigned long H_JunctionState;
 extern unsigned long input_Y; // Input for Y-Junction
 extern unsigned long input_X; // Input for X-Junction
 extern unsigned long input_H; // Input for H-Junction
+
+// Queue handle for traffic state data
+extern QueueHandle_t trafficStateQueue;
 
 // Function Prototypes
 /**

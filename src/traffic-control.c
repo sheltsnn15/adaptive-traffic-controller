@@ -1,10 +1,7 @@
 #include "traffic-control.h"
-#include "driver/gpio.h"
 #include "driver/uart.h"
 #include "esp_log.h"
 #include "esp_random.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
 #include "freertos/task.h"
 #include <stdio.h>
 #include <string.h>
@@ -163,6 +160,11 @@ void trafficLightTask(void *pvParameter) {
                         input_X);
     handleJunctionState(JUNCTION_H, &H_JunctionState, FSM_H, &oldOutput_H,
                         input_H);
+
+    // Send traffic states to the queue
+    xQueueSend(trafficStateQueue, &Y_JunctionState, 0);
+    xQueueSend(trafficStateQueue, &X_JunctionState, 0);
+    xQueueSend(trafficStateQueue, &H_JunctionState, 0);
   }
 }
 
@@ -184,9 +186,13 @@ void uart_send_data(const char *data) {
   uart_write_bytes(UART_PORT_NUM, data, strlen(data));
 }
 
+QueueHandle_t trafficStateQueue;
 void app_main(void) {
   // Initialize UART
   uart_init();
+
+  // Create the traffic state queue with capacity for 10 items
+  trafficStateQueue = xQueueCreate(10, sizeof(unsigned long));
 
   // Create the traffic light task
   xTaskCreate(trafficLightTask, "trafficLightTask", 2048, NULL, 5, NULL);
