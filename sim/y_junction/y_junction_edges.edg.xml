@@ -1,0 +1,8 @@
+<edges>
+  <edge from="n1" id="n1toC" numLanes="1" priority="1" speed="13.9" to="center"></edge>
+  <edge from="n2" id="n2toC" numLanes="1" priority="1" speed="13.9" to="center"></edge>
+  <edge from="n3" id="n3toC" numLanes="1" priority="1" speed="13.9" to="center"></edge>
+  <edge from="center" id="CtoN1" numLanes="1" priority="1" speed="13.9" to="n1"></edge>
+  <edge from="center" id="CtoN2" numLanes="1" priority="1" speed="13.9" to="n2"></edge>
+  <edge from="center" id="CtoN3" numLanes="1" priority="1" speed="13.9" to="n3"></edge>
+</edges>

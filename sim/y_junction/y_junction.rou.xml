@@ -1,0 +1,14 @@
+<routes>
+  <vType accel="1.0" decel="4.5" guiShape="passenger" id="car" length="5" maxSpeed="13.9" minGap="2.5" sigma="0.5"></vType>
+  <vType accel="0.8" decel="4.0" guiShape="truck" id="truck" length="8" maxSpeed="10.0" minGap="3.0" sigma="0.3"></vType>
+  <vType accel="0.6" decel="3.5" guiShape="bus" id="bus" length="12" maxSpeed="9.0" minGap="3.5" sigma="0.4"></vType>
+  <route edges="n1toC CtoN3" id="r1"></route>
+  <route edges="n2toC CtoN1" id="r2"></route>
+  <route edges="n3toC CtoN2" id="r3"></route>
+  <flow begin="0" departLane="random" departSpeed="random" end="60" id="left2right_car" number="10" route="r1" type="car"></flow>
+  <flow begin="10" departLane="random" departSpeed="random" end="70" id="left2right_truck" number="4" route="r1" type="truck"></flow>
+  <flow begin="5" departLane="random" departSpeed="random" end="65" id="top2left_bus" number="5" route="r2" type="bus"></flow>
+  <flow begin="0" departLane="random" departSpeed="random" end="60" id="top2left_car" number="6" route="r2" type="car"></flow>
+  <flow begin="0" departLane="random" departSpeed="random" end="60" id="right2top_truck" number="5" route="r3" type="truck"></flow>
+  <flow begin="5" departLane="random" departSpeed="random" end="65" id="right2top_car" number="7" route="r3" type="car"></flow>
+</routes>
