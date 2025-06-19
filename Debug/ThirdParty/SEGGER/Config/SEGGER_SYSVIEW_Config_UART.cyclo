@@ -1,0 +1,5 @@
+../ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.c:103:12:_SysView_TrySend	3
+../ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.c:132:13:_SysView_OnRxComplete	3
+../ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.c:157:12:_SysView_OnTxComplete	3
+../ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.c:177:6:SEGGER_SYSVIEW_X_OnEventRecorded	1
+../ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.c:188:6:SYSVIEW_UART_Config	1

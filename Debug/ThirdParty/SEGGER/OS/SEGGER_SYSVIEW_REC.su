@@ -1,0 +1,2 @@
+../ThirdParty/SEGGER/OS/SEGGER_SYSVIEW_REC.c:102:5:SYSVIEW_REC_GetOutgoing	24	static
+../ThirdParty/SEGGER/OS/SEGGER_SYSVIEW_REC.c:168:5:SYSVIEW_REC_ProcessIncoming	24	static
