@@ -25,10 +25,12 @@
 /* USER CODE BEGIN Includes */
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
+#include "SEGGER_SYSVIEW.h"
 #include "projdefs.h"
 #include "task.h"
 #include <stdint.h>
 #include <stdio.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef
@@ -121,13 +123,16 @@ main (void)
     // app_main ();
     enableCycleCounter ();
 
+    TaskHandle_t xMeasureHandle;
     xTaskCreate (measureForLoop,               // Static wrapper
                  "MeasureForLoop",             // Task name
                  configMINIMAL_STACK_SIZE * 2, // Stack size (words, not bytes)
                  NULL,                 // Parameter → pass 'this' pointer
                  tskIDLE_PRIORITY + 1, // Priority
-                 NULL                  // Task handle
+                 &xMeasureHandle       // Task handle
     );
+
+    SEGGER_SYSVIEW_NameResource ((U32)xMeasureHandle, "MeasureForLoop");
 
     vTaskStartScheduler ();
 
@@ -286,6 +291,9 @@ measureForLoop (void *pvParameters)
 {
     while (1)
     {
+        SEGGER_SYSVIEW_PrintfHost ("Task starting loop");
+
+        SEGGER_SYSVIEW_OnUserStart (1);
 
         uint32_t startCycles, endCycles, totalCycles;
 
@@ -297,9 +305,13 @@ measureForLoop (void *pvParameters)
         }
         endCycles = getCycleCount ();
         totalCycles = endCycles - startCycles;
+
+        SEGGER_SYSVIEW_OnUserStop (1);
+
         printf ("FOR LOOP: %lu cycles\r\n", totalCycles);
+
+        vTaskDelay (pdMS_TO_TICKS (350));
     }
-    vTaskDelay (pdMS_TO_TICKS (1000));
 }
 
 void

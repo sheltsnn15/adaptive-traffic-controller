@@ -5,7 +5,11 @@
 #include <cstdint>
 
 namespace TrafficSim {
-enum class LightState { RED, YELLOW, GREEN };
+enum class LightState {
+    RED,
+    YELLOW,
+    GREEN
+}; // Tracks the current state of a traffic light for a junction or controller
 
 class TrafficLightController {
   public:
