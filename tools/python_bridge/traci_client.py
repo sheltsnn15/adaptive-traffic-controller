@@ -8,7 +8,6 @@ class TraCIClient:
         self.lane_map = {
             "x": ["n1to2_0", "n3to2_0", "n4to2_0", "n5to2_0"],
             "y": ["n1toC_0", "n2toC_0", "n3toC_0"],
-            "ddi": ["north_to_cross1_0", "west_to_cross1_0"],
         }
         self.lanes = self.lane_map.get(junction_type, [])
         self.sumo_cmd = sumo_cmd
