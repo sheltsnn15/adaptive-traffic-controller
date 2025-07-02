@@ -2,18 +2,26 @@ import paho.mqtt.client as mqtt
 import json
 import time
 
-MQTT_BROKER = "localhost"
-MQTT_PORT = 1883
-MQTT_TOPIC = "traffic/"
-
 
 class MQTTPublisher:
-    def __init__(self, broker: str, port: int, junction_type: str, device_id: str):
+    def __init__(
+        self,
+        broker: str,
+        port: int,
+        junction_type: str,
+        device_id: str,
+        username: str = None,
+        password: str = None,
+    ):
         self.broker = broker
         self.port = port
         self.topic = f"traffic/{junction_type}/{device_id}/data"
         self.connected = False
+        self.username = username
+        self.password = password
         self.client = mqtt.Client()
+        if self.username and self.password:
+            self.client.username_pw_set(self.username, self.password)
         self.client.on_connect = self.on_connect
         self.client.on_disconnect = self.on_disconnect
         self.client.on_publish = self.on_publish
