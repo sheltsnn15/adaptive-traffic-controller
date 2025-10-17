@@ -1,0 +1,9 @@
+<configuration>
+    <input>
+        <node-files value="y_junction_nodes.nod.xml"/>
+        <edge-files value="y_junction_edges.edg.xml"/>
+    </input>
+    <output>
+        <output-file value="y_junction.net.xml"/>
+    </output>
+</configuration>
