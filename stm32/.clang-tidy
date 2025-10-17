@@ -1,0 +1,15 @@
+Checks: >
+  clang-analyzer-*, bugprone-*, performance-*, readability-*, portability-simd-intrinsics, misc-*, -clang-analyzer-alpha.*,             # remove alpha checkers (too unstable) -clang-analyzer-cplusplus.NewDeleteLeaks, # noisy for embedded -google-runtime-references,         # not useful for embedded -modernize-use-trailing-return-type, -modernize-use-auto, -modernize-avoid-bind, -modernize-pass-by-value, -modernize-use-default-member-init
+
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*'
+FormatStyle: file
+CheckOptions:
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.FunctionCase
+    value: CamelCase
+  - key: misc-unused-parameters.IgnoreUnusedParameters
+    value: 1
+  - key: modernize-use-nullptr.NullMacros
+    value: NULL

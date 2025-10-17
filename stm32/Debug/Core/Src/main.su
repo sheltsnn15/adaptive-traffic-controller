@@ -1,0 +1,10 @@
+../Core/Src/main.c:90:1:main	24	static
+../Core/Src/main.c:157:1:SystemClock_Config	88	static
+../Core/Src/main.c:206:1:MX_USART2_UART_Init	8	static
+../Core/Src/main.c:239:1:MX_GPIO_Init	48	static
+../Core/Src/main.c:276:1:enableCycleCounter	4	static
+../Core/Src/main.c:284:1:getCycleCount	4	static
+../Core/Src/main.c:290:1:measureForLoop	40	static
+../Core/Src/main.c:318:1:vApplicationStackOverflowHook	16	static
+../Core/Src/main.c:327:1:vApplicationMallocFailedHook	8	static
+../Core/Src/main.c:341:1:Error_Handler	4	static,ignoring_inline_asm

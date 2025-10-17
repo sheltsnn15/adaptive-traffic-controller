@@ -1,0 +1,9 @@
+../Core/Src/traffic_light_controller.cpp:22:1:TrafficSim::TrafficLightController::TrafficLightController()	1
+../Core/Src/traffic_light_controller.cpp:30:6:void TrafficSim::TrafficLightController::startTask()	1
+../Core/Src/traffic_light_controller.cpp:41:6:static void TrafficSim::TrafficLightController::taskEntry(void*)	2
+../Core/Src/traffic_light_controller.cpp:49:6:void TrafficSim::TrafficLightController::taskLoop()	1
+../Core/Src/traffic_light_controller.cpp:59:6:void TrafficSim::TrafficLightController::updateStateMachine()	5
+../Core/Src/traffic_light_controller.cpp:83:6:void TrafficSim::TrafficLightController::publishStateMachine()	5
+../Core/Src/traffic_light_controller.cpp:113:6:void TrafficSim::TrafficLightController::setState(TrafficSim::LightState)	1
+../Core/Src/traffic_light_controller.cpp:118:12:TrafficSim::LightState TrafficSim::TrafficLightController::getCurrentState() const	1
+../Core/Src/traffic_light_controller.cpp:122:6:void TrafficSim::TrafficLightController::setPhaseDuration(uint32_t)	1

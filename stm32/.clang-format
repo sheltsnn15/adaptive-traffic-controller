@@ -1,0 +1,51 @@
+# ---------------------------------------------------------------------------
+#  Global defaults – apply to every language unless a later block overrides
+# ---------------------------------------------------------------------------
+BasedOnStyle: LLVM # sensible modern baseline
+IndentWidth: 4 # 4-space indentation
+TabWidth: 4
+UseTab: Never # ST’s CubeMX generator uses spaces
+ContinuationIndentWidth: 4
+ColumnLimit: 120 # plenty wide for register macros
+BreakBeforeBraces: Allman # brace on its own line
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AlignAfterOpenBracket: AlwaysBreak
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: true
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: true
+  BeforeElse: true
+  SplitEmptyFunction: false
+CommentPragmas: '^/*lint' # keep MISRA/Lint comments untouched
+IncludeBlocks: Preserve # keep Cube-generated blocks intact
+SortIncludes: false # header ordering is often deliberate
+SpaceBeforeParens: ControlStatements
+
+# ---------------------------------------------------------------------------
+#  C overrides – STM32 HAL and LL drivers are pure C
+# ---------------------------------------------------------------------------
+---
+Language: C
+BasedOnStyle: GNU # closer to traditional C style
+IndentWidth: 4
+UseTab: Never
+BreakBeforeBraces: Allman
+
+# ---------------------------------------------------------------------------
+#  C++ overrides – for middleware or application layers written in C++
+# ---------------------------------------------------------------------------
+---
+Language: Cpp
+BasedOnStyle: LLVM
+IndentWidth: 4
+UseTab: Never
+Cpp11BracedListStyle: true
+Standard: Latest
