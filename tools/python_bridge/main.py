@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 
 # --- Config ---
-JUNCTION_TYPE = "x"  # or "y", "ddi"
+JUNCTION_TYPE = "x"  # or "y"
 DEVICE_ID = "esp32-001"
 BROKER = "localhost"
 PORT = 1883

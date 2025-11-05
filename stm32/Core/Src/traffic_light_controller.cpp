@@ -3,7 +3,7 @@
 #include <string.h>
 
 extern "C" {
-#include "main.h" // contains extern UART_HandleTypeDef huart2;
+#include "main.h"
 }
 
 namespace TrafficSim {

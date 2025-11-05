@@ -16,9 +16,10 @@ class TrafficDataPublisher:
             # Step 3: Build the payload
             payload = {
                 "lanes": lane_counts,
-                "timestamp": int(timestamp),  # optionally round to int
+                "timestamp": int(timestamp),
+                "junction_type": self.traci.junction_type
             }
-            # Step 4: Publish to MQTT
+            # Step 4: Publish via sender
             self.sender.send(payload)
         except Exception as e:
             print(f"[ERROR] Failed to publish traffic data: {e}")
