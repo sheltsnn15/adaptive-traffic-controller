@@ -1,6 +1,23 @@
 import traci
 
 
+def map_lanes_to_directions(lane_counts, junction_type):
+    if junction_type == "x":
+        return {
+            "n": lane_counts.get("n5to2_0", 0),
+            "s": lane_counts.get("n4to2_0", 0),
+            "e": lane_counts.get("n1to2_0", 0),
+            "w": lane_counts.get("n3to2_0", 0),
+        }
+    elif junction_type == "y":
+        return {
+            "n": lane_counts.get("n1toC_0", 0),
+            "s": lane_counts.get("n2toC_0", 0),
+            "e": lane_counts.get("n3toC_0", 0),
+            "w": 0,
+        }
+
+
 class TraCIClient:
     def __init__(self, junction_type, sumo_cmd):
         self.junction_type = junction_type  # e.g. "x", "y"
@@ -11,7 +28,6 @@ class TraCIClient:
         }
         self.lanes = self.lane_map.get(junction_type, [])
         self.sumo_cmd = sumo_cmd
-        self.traci = None
 
     def start(self):
         traci.start(self.sumo_cmd)
@@ -26,17 +42,8 @@ class TraCIClient:
                 data[lane_id] = self.traci.lane.getLastStepVehicleNumber(lane_id)
             except self.traci.TraCIException:
                 print(f"[WARN] Lane '{lane_id}' not found.")
-        return data
-
-    def get_traffic_light_state(self, tls_id):
-        try:
-            state = self.traci.trafficlight.getRedYellowGreenState(tls_id)
-            phase = self.traci.trafficlight.getPhase(tls_id)
-            return {"state":state, "phase": phase}
-        except Exception as e:
-            print(f"[WARN] could not get TL state: {e}")
-            return {"state":"unknown", "phase": -1}
-
+        mapped_data = map_lanes_to_directions(data, self.junction_type)
+        return mapped_data
 
     def get_time(self):
         return self.traci.simulation.getTime()

@@ -1,5 +1,5 @@
-import json
 import crcmod
+import struct
 
 
 def setup_crc16_ccitt():
@@ -9,12 +9,6 @@ def setup_crc16_ccitt():
 
 # Global CRC function
 crc16_ccitt = setup_crc16_ccitt()
-
-
-class JSONOutputHandler:
-
-    def send(self, payload):
-        print(json.dumps(payload))
 
 
 class TLVOutputHandler:
@@ -27,6 +21,10 @@ class TLVOutputHandler:
         self.sof_pattern = b"\xaa\x55"
 
     def process_byte(self, byte):
+
+        # Add the new byte to buffer
+        self.buffer.append(byte)
+
         if self.state == "SEEKING_SOF":
             # Look for 0xAA55 pattern
             self._seek_start_of_frame()
@@ -97,15 +95,19 @@ class TLVOutputHandler:
                     | (ts_bytes[3] << 24)
                 )
 
+                # Parse junction type (1 byte)
+                junction_type = payload_bytes[4]
+
                 # Parse lane counts (4 bytes)
-                n = payload_bytes[4]
-                s = payload_bytes[5]
-                e = payload_bytes[6]
-                w = payload_bytes[7]
+                n = payload_bytes[5]
+                s = payload_bytes[6]
+                e = payload_bytes[7]
+                w = payload_bytes[8]
 
                 # Store the parsed data
                 self.current_payload = {
                     "timestamp": timestamp,
+                    "junction_type": junction_type,
                     "lanes": {"n": n, "s": s, "e": e, "w": w},
                 }
 
@@ -154,12 +156,45 @@ class TLVOutputHandler:
             self.state = "SEEKING_SOF"
 
     def send(self, payload):
-        # Convert JSON to TLV binary
-        tlv_data = self.json_to_tlv(payload)
-        # Send to serial port
-        # self.serial.write(tlv_data)
-        print(f"[TLV] Would send {len(tlv_data)} bytes")
+        if 'type' in payload and 'payload' in payload:
+            # This is a decoded frame from STM32
+            print(f"[STM32→PYTHON] Received: {payload}")
+        else:
+            # This is SUMO data to encode for STM32
+            # Convert JSON to TLV binary
+            tlv_data = self.json_to_tlv(payload)
+            # Send to serial port
+            # self.serial.write(tlv_data)
+            print(f"[TLV] Would send {len(tlv_data)} bytes")
 
     def json_to_tlv(self, payload):
-        # Placeholder for TLV encoding
-        return b""
+        # Extract data
+        timestamp = payload["timestamp"]
+        junction_type = 0 if payload["junction_type"] == "x" else 1
+        lanes = payload["lanes"]
+
+        # Build the payload
+        payload_bytes = struct.pack(
+            "<LBBBBB",
+            timestamp,
+            junction_type,
+            lanes["n"],
+            lanes["s"],
+            lanes["e"],
+            lanes["w"],
+        )
+
+        # 2. Build frame: SOF + LEN + TYPE + PAYLOAD + CRC
+        frame = bytearray()
+
+        frame.extend(b"\xaa\x55")
+        # LEN = TYPE(1) + PAYLOAD(9) + CRC(2) = 12
+        frame.extend(struct.pack("<H", 12))
+        frame.extend(b"\x01")
+        frame.extend(payload_bytes)
+        # CRC (over TYPE + PAYLOAD only)
+        crc_data = frame[4:]
+        crc_value = crc16_ccitt(bytes(crc_data))
+        frame.extend(struct.pack("<H", crc_value))
+
+        return bytes(frame)

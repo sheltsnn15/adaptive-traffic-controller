@@ -1,1 +1,91 @@
-tools/python_bridge/.env
+### PlatformIO/ESP32 ###
+/.pio/
+/.pioenvs/
+/.pio/build/
+/libdeps/
+*.elf
+*.map
+*.bin
+*.hex
+*.o
+*.d
+*.a
+sdkconfig
+sdkconfig.old
+*.partition
+partition_table/
+
+### STM32/CubeIDE ###
+*.ioc
+.mxproject
+.cproject
+.project
+.settings/
+Debug/
+*.launch
+*.list
+*.mk
+objects.list
+systemview_capture.SVdat
+STM32F446RETX_RAM.ld
+
+### Python ###
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+env/
+venv/
+Pipfile.lock
+.coverage
+.pytest_cache/
+.coverage.*
+*.cover
+.hypothesis/
+
+### SUMO Simulation ###
+*.netccfg
+*.sumocfg
+
+### Logs & Temp Files ###
+*.log
+*.tmp
+*~
+*.swp
+*.swo
+*.swn
+*.dmp
+*.core
+*.stackdump
+
+### IDE/Editor ###
+.vscode/
+.idea/
+.cache/
+*.swp
+*~
+
+### OS Junk ###
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+### Git ###
+*.orig
+*.rej
+
+### Build Systems ###
+# compile_commands.json is often regenerated, but you might want to keep it
+# Uncomment the next line if you don't want to track it
+# compile_commands.json
+
+### Project Specific ###
+# STM32 compiled binaries
+traffic-light-sim.elf
+traffic-light-sim.map
+
+# Python cache and test artifacts
+__pycache__/
+test_*.pyc

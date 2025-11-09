@@ -15,9 +15,9 @@ class TrafficDataPublisher:
             timestamp = self.traci.get_time()
             # Step 3: Build the payload
             payload = {
-                "lanes": lane_counts,
                 "timestamp": int(timestamp),
-                "junction_type": self.traci.junction_type
+                "junction_type": self.traci.junction_type,
+                "lanes": lane_counts,
             }
             # Step 4: Publish via sender
             self.sender.send(payload)
