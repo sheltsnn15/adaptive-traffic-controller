@@ -1,4 +1,3 @@
-import tlv_publisher
 from traffic_data_publisher import TrafficDataPublisher
 from traci_client import TraCIClient
 

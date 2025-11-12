@@ -1,2 +1,4 @@
 traci
 paho-mqtt
+requests
+crcmod

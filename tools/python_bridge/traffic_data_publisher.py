@@ -19,6 +19,7 @@ class TrafficDataPublisher:
                 "junction_type": self.traci.junction_type,
                 "lanes": lane_counts,
             }
+            # print(f"SUMO Data: ts={timestamp}, lanes={lane_counts}")
             # Step 4: Publish via sender
             self.sender.send(payload)
         except Exception as e:
