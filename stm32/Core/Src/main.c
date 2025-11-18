@@ -71,7 +71,6 @@ static void MX_USART2_UART_Init (void);
 extern void app_main (void);
 void enableCycleCounter (void);
 uint32_t getCycleCount (void);
-void measureForLoop (void *pvParameters);
 void vApplicationStackOverflowHook (TaskHandle_t xTask, char *pcTaskName);
 
 /* USER CODE END PFP */
@@ -116,23 +115,11 @@ main (void)
     MX_GPIO_Init ();
     MX_USART2_UART_Init ();
     /* USER CODE BEGIN 2 */
-    SEGGER_SYSVIEW_Conf ();  // Configure buffers, timestamps
-    SEGGER_SYSVIEW_Start (); // Optional: triggers recording if autostart
-                             // disabled
+    SEGGER_SYSVIEW_Conf ();
+    SEGGER_SYSVIEW_Start ();
 
     // app_main ();
     enableCycleCounter ();
-
-    TaskHandle_t xMeasureHandle;
-    xTaskCreate (measureForLoop,               // Static wrapper
-                 "MeasureForLoop",             // Task name
-                 configMINIMAL_STACK_SIZE * 2, // Stack size (words, not bytes)
-                 NULL,                 // Parameter → pass 'this' pointer
-                 tskIDLE_PRIORITY + 1, // Priority
-                 &xMeasureHandle       // Task handle
-    );
-
-    SEGGER_SYSVIEW_NameResource ((U32)xMeasureHandle, "MeasureForLoop");
 
     vTaskStartScheduler ();
 
@@ -284,34 +271,6 @@ uint32_t
 getCycleCount (void)
 {
     return DWT_CYCCNT;
-}
-
-void
-measureForLoop (void *pvParameters)
-{
-    while (1)
-    {
-        SEGGER_SYSVIEW_PrintfHost ("Task starting loop");
-
-        SEGGER_SYSVIEW_OnUserStart (1);
-
-        uint32_t startCycles, endCycles, totalCycles;
-
-        startCycles = getCycleCount ();
-        volatile uint32_t sum = 0;
-        for (uint32_t i = 0; i < 5; i++)
-        {
-            sum += i;
-        }
-        endCycles = getCycleCount ();
-        totalCycles = endCycles - startCycles;
-
-        SEGGER_SYSVIEW_OnUserStop (1);
-
-        printf ("FOR LOOP: %lu cycles\r\n", totalCycles);
-
-        vTaskDelay (pdMS_TO_TICKS (350));
-    }
 }
 
 void

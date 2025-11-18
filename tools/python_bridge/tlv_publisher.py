@@ -85,34 +85,36 @@ class TLVOutputHandler:
             payload_bytes = self.buffer[5 : (5 + self.payload_len)]
 
             # Parse the payload based on message type
-            if self.current_type == 0x01:  # LaneCounts
-                # Parse the timestamp(4 bytes, little-endian)
-                ts_bytes = payload_bytes[0:4]
-                timestamp = (
-                    ts_bytes[0]
-                    | (ts_bytes[1] << 8)
-                    | (ts_bytes[2] << 16)
-                    | (ts_bytes[3] << 24)
-                )
+            if self.current_type == 0x02: # Light State
+                self.handle_light_state(payload_bytes)
 
-                # Parse junction type (1 byte)
-                junction_type = payload_bytes[4]
-
-                # Parse lane counts (4 bytes)
-                n = payload_bytes[5]
-                s = payload_bytes[6]
-                e = payload_bytes[7]
-                w = payload_bytes[8]
-
-                # Store the parsed data
-                self.current_payload = {
-                    "timestamp": timestamp,
-                    "junction_type": junction_type,
-                    "lanes": {"n": n, "s": s, "e": e, "w": w},
-                }
+            if self.current_type == 0x03: # Heart beat
+                self.handle_heartbeat(payload_bytes)
 
             # Transition to READING_CRC state
             self.state = "READING_CRC"
+
+    def handle_light_state(self,payload_bytes):
+        # Parse the current state
+        current_state = payload_bytes[0]
+
+        # Parse decision reason
+        decision_reason = payload_bytes[1]
+
+        # Parse phase duration
+        phase_duration = (payload_bytes[3] << 8 | payload_bytes[2]) # Little-endian
+
+        # Store the parsed data
+        self.current_payload = {
+            "current_state": current_state,
+            "decision_reason": decision_reason,
+            "phase_duration": phase_duration, # convert 100
+        }
+
+
+    def handle_heartbeat(self, payload_bytes):
+        pass
+
 
     def _read_crc(self):
         # Calculate position: after SOF(2) + HEADER(3) + payload_len

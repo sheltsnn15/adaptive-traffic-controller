@@ -1,54 +1,59 @@
-## Overview
+# Traffic Lab v2
 
-Hard real-time traffic controller that processes vehicle data from SUMO simulations and controls traffic lights with deterministic timing (< 5ms jitter).
+**Real-time embedded traffic control system** - STM32 FreeRTOS state machine with SUMO simulation bridge.
 
-## Project Structure
+## Core Features
+
+- **≤5ms jitter** state machine (FreeRTOS + SystemView)
+- **Minimal TLV protocol** with CRC16 validation  
+- **Linux diagnostic tool** (`tlv_dump` with frame statistics)
+- **Adaptive algorithm** vs fixed-time throughput comparison
+
+## Architecture
 
 ```
-traffic-light-sim/
-├── stm32/          # FreeRTOS application (STM32F4)
-├── sim/            # SUMO configurations (X & Y junctions)
-├── tools/python_bridge/  # Python MQTT/TraCI bridge
-├── proto/          # TLV protocol library
-├── linux/          # Linux tools and utilities
-└── docs/           # Documentation and protocols
+STM32    FreeRTOS                         Python
+UartRx → TrafficController → UartTx   ↔   sumo_bridge.py ↔ SUMO
+         (State Machine)                    (TraCI + TLV)
 ```
 
-## Key Features
+## TLV Protocol (2 Messages)
 
-- **Real-time Control**: 100ms control period with ≤5ms jitter
-- **Adaptive Algorithm**: Extends green time based on traffic load
-- **TLV Protocol**: Compact binary protocol for sensor data
-- **SUMO Integration**: Real traffic simulation with Python bridge
-- **FreeRTOS**: Deterministic task scheduling on STM32
+**Frame:** `| SOF 0xAA55 | LEN | TYPE | PAYLOAD | CRC16 |`
 
-## Quick Start
+- **`0x01 LaneCounts`** (SUMO→STM32): `[ts_sec, n, s, e, w]`
+- **`0x02 LightState`** (STM32→SUMO): `[current_state]`
 
-1. **Run SUMO Simulation**:
+## State Machine
 
-   ```bash
-   sumo-gui -c sim/x_junction/x_junction.sumocfg
-   ```
+```
+NS_GREEN (8-25s) → NS_YELLOW (3s) → ALL_RED (1s) → 
+EW_GREEN (8-25s) → EW_YELLOW (3s) → ALL_RED (1s)
+```
 
-2. **Start Python Bridge**:
+**Adaptive rule:** Extend green if opposite queue > current + 3 for 2+ cycles
 
-   ```bash
-   cd tools/python_bridge
-   python main.py
-   ```
+## Quick Demo
 
-3. **STM32 Controller**: Build and flash the STM32 project using STM32CubeIDE
+```bash
+# 1. Run bridge to SUMO
+python tools/python_bridge/main.py
 
-## Protocol
+# 2. Monitor TLV traffic
+cat /dev/ttyUSB0 | ./linux/tlv_dump
 
-Uses TLV (Type-Length-Value) frames:
+# 3. View: Real-time control + throughput improvement
+```
 
-- `0x01`: Lane counts (vehicle data)
-- `0x03`: Heartbeat (system status)
+## Validation
+
+- **SystemView traces** proving ≤5ms timing jitter
+- **Throughput comparison** showing adaptive vs fixed-time performance
+- **Frame statistics** via `tlv_dump` diagnostic tool
 
 ## Requirements
 
-- SUMO (Simulation of Urban MObility)
+- SUMO
 - Python 3.8+
 - STM32CubeIDE
-- STM32F446RE Nucleo board
+- STM32F446RE Nucleo

@@ -18,7 +18,6 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-
 ## **Protocol Specification**
 
 ### **1. Frame Format**
