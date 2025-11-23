@@ -12,8 +12,8 @@ class TaskManager {
     static void startTasks();
 
     // Queue interfaces
-    static bool sendLaneCounts(const LaneCounts &counts);
-    static bool sendLightCommand(const LightStatePayload &cmd);
+    static bool sendLaneCounts(const Traffic::LaneCounts &counts);
+    static bool sendLightCommand(const Traffic::LightStatePayload &cmd);
 
   private:
     static QueueHandle_t lane_counts_queue_;

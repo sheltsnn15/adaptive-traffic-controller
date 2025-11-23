@@ -23,15 +23,15 @@ class TlvParser {
     uint8_t parseByte(uint8_t byte);
 
     // Get parsed data (only valid after parseByte returns non-zero)
-    const LaneCounts &getLaneCounts() const { return lane_counts_; }
+    const Traffic::LaneCounts &getLaneCounts() const { return lane_counts_; }
 
     // Reset parser state
     void reset();
 
     // Encoding methods
-    static bool encodeLightState(const LightStatePayload &cmd, uint8_t *buffer,
-                                 size_t &len);
-    static bool encodeHeartbeat(const Heartbeat &hb, uint8_t *buffer,
+    static bool encodeLightState(const Traffic::LightStatePayload &cmd,
+                                 uint8_t *buffer, size_t &len);
+    static bool encodeHeartbeat(const Traffic::HeartBeat &hb, uint8_t *buffer,
                                 size_t &len);
 
   private:
@@ -40,7 +40,7 @@ class TlvParser {
     uint8_t pos_;
     uint16_t expected_len_;
     uint16_t crc_calculated_;
-    LaneCounts lane_counts_;
+    Traffic::LaneCounts lane_counts_;
 
     bool validateFrame() const;
     void dispatchMessage();

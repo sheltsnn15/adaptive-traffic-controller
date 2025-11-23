@@ -33,7 +33,8 @@ struct LightStatePayload {
 
 struct HeartBeat {
     uint32_t uptime_ms; // Sys uptime
-}
+};
+
 #pragma pack(pop) // Restores the previous packing alignment
 
 } // namespace Traffic

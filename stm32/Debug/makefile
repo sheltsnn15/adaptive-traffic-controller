@@ -91,8 +91,8 @@ all: main-build
 main-build: traffic-light-sim.elf secondary-outputs
 
 # Tool invocations
-traffic-light-sim.elf traffic-light-sim.map: $(OBJS) $(USER_OBJS) /home/shelton/Documents/Project/SelfStudy/Embedded_Systems/Mastering_RTOS/stm32/nucleo-f44re/traffic_light_sim/STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "traffic-light-sim.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/shelton/Documents/Project/SelfStudy/Embedded_Systems/Mastering_RTOS/stm32/nucleo-f44re/traffic_light_sim/STM32F446RETX_FLASH.ld" -Wl,-Map="traffic-light-sim.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+traffic-light-sim.elf traffic-light-sim.map: $(OBJS) $(USER_OBJS) /home/shelton/Documents/Projects/traffic-light-sim/stm32/STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "traffic-light-sim.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/shelton/Documents/Projects/traffic-light-sim/stm32/STM32F446RETX_FLASH.ld" -Wl,-Map="traffic-light-sim.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

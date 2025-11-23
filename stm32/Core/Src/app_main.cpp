@@ -1,12 +1,12 @@
 // Core/Src/app_main.cpp
 #include "FreeRTOS.h"
-#include "cmsis_os.h"
 #include "main.h"
 #include "queue.h"
 #include "task.h"
 #include "tlv_parser.hpp"
 #include "traffic_state_machine.hpp"
 #include "traffic_types.hpp"
+#include <cstdio>
 
 // Forward declarations to avoid including entire class definitions
 extern "C" {
@@ -152,7 +152,7 @@ extern "C" void uartTxTask(void *params) {
 extern "C" void heartbeatTask(void *params) {
     (void)params;
 
-    Traffic::Heartbeat hb;
+    Traffic::HeartBeat hb;
     uint8_t tx_buffer[32];
     size_t tx_len;
     uint32_t uptime = 0;

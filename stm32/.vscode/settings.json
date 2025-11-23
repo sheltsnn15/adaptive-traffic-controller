@@ -1,1 +1,3 @@
-{}
+{
+  "cmake.sourceDirectory": "/home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS"
+}

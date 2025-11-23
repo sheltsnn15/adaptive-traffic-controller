@@ -19,13 +19,13 @@ class TrafficStateMachine {
     TrafficStateMachine();
 
     // Process new traffic data
-    void processLaneCounts(const LaneCounts &counts);
+    void processLaneCounts(const Traffic::LaneCounts &counts);
 
     // Update state machine (call every 100ms)
     void update(uint32_t elapsed_ms);
 
     // Get current command
-    LightStatePayload getCurrentCommand() const;
+    Traffic::LightStatePayload getCurrentCommand() const;
 
     // Emergency and watchdog controls
     void triggerEmergency();
@@ -36,7 +36,7 @@ class TrafficStateMachine {
     State current_state_;
     uint32_t state_timer_;
     uint32_t extension_count_;
-    LaneCounts last_counts_;
+    Traffic::LaneCounts last_counts_;
     bool should_extend_;
 
     // Timing constants (in 100ms units)
