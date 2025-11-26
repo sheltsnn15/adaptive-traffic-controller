@@ -2,19 +2,15 @@
 #pragma once
 #include "cppcrc.hpp"
 #include "traffic_types.hpp"
+#include <cstdint>
 
 class TlvParser {
   public:
     enum class ParseState {
         IDLE,
-        SOF1,
-        SOF2,
-        LEN1,
-        LEN2,
-        TYPE,
+        HEADER,
         PAYLOAD,
-        CRC1,
-        CRC2
+        CRC,
     };
 
     TlvParser();
@@ -40,6 +36,7 @@ class TlvParser {
     uint8_t pos_;
     uint16_t expected_len_;
     uint16_t crc_calculated_;
+    uint8_t crc_bytes_received_;
     Traffic::LaneCounts lane_counts_;
 
     bool validateFrame() const;
