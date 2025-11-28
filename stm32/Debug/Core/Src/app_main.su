@@ -1,10 +1,10 @@
-../Core/Inc/tlv_parser.hpp:26:32:const Traffic::LaneCounts& TlvParser::getLaneCounts() const	16	static
-../Core/Src/app_main.cpp:38:17:void name_traffic_tasks()	8	static
-../Core/Src/app_main.cpp:45:17:bool init_traffic_system()	24	static
-../Core/Src/app_main.cpp:79:17:void uartRxTask(void*)	32	static
-../Core/Src/app_main.cpp:102:17:void trafficCtrlTask(void*)	40	static
-../Core/Src/app_main.cpp:131:17:void uartTxTask(void*)	56	static
-../Core/Src/app_main.cpp:152:17:void heartbeatTask(void*)	64	static
-../Core/Src/app_main.cpp:173:17:void app_main()	24	static
-../Core/Src/app_main.cpp:191:1:void __static_initialization_and_destruction_0()	8	static
-../Core/Src/app_main.cpp:191:1:cpp)	8	static
+../Core/Inc/tlv_parser.hpp:27:32:const Traffic::LaneCounts& TlvParser::getLaneCounts() const	16	static
+../Core/Src/app_main.cpp:31:17:void name_traffic_tasks()	8	static
+../Core/Src/app_main.cpp:38:17:bool init_traffic_system()	24	static
+../Core/Src/app_main.cpp:72:17:void uartRxTask(void*)	32	static
+../Core/Src/app_main.cpp:95:17:void trafficCtrlTask(void*)	40	static
+../Core/Src/app_main.cpp:124:17:void uartTxTask(void*)	56	static
+../Core/Src/app_main.cpp:145:17:void heartbeatTask(void*)	64	static
+../Core/Src/app_main.cpp:166:17:void app_main()	24	static
+../Core/Src/app_main.cpp:184:1:void __static_initialization_and_destruction_0()	8	static
+../Core/Src/app_main.cpp:184:1:cpp)	8	static

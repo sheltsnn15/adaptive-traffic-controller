@@ -39,6 +39,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/include/deprecated_definitions.h \
  /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/portable/GCC/ARM_CM4F/portmacro.h \
  /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/include/mpu_wrappers.h \
+ ../Core/Inc/app_main.hpp \
  /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/include/projdefs.h \
  /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/include/task.h \
  /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/include/list.h
@@ -83,6 +84,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/include/deprecated_definitions.h:
 /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/portable/GCC/ARM_CM4F/portmacro.h:
 /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/include/mpu_wrappers.h:
+../Core/Inc/app_main.hpp:
 /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/include/projdefs.h:
 /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/include/task.h:
 /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/include/list.h:

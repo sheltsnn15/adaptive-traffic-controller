@@ -26,6 +26,7 @@
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "SEGGER_SYSVIEW.h"
+#include "app_main.hpp"
 #include "projdefs.h"
 #include "task.h"
 #include <stdint.h>
@@ -68,7 +69,6 @@ void SystemClock_Config (void);
 static void MX_GPIO_Init (void);
 static void MX_USART2_UART_Init (void);
 /* USER CODE BEGIN PFP */
-extern void app_main (void);
 void enableCycleCounter (void);
 uint32_t getCycleCount (void);
 void vApplicationStackOverflowHook (TaskHandle_t xTask, char *pcTaskName);
@@ -118,8 +118,8 @@ main (void)
     SEGGER_SYSVIEW_Conf ();
     SEGGER_SYSVIEW_Start ();
 
-    // app_main ();
     enableCycleCounter ();
+    app_main ();
 
     vTaskStartScheduler ();
 

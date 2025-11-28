@@ -4,13 +4,18 @@
 #include "traffic_types.hpp"
 #include <cstdint>
 
-class TlvParser {
+class TlvParser { // direct byte-to-struct parsing
   public:
     enum class ParseState {
+
         IDLE,
-        HEADER,
+        SOF1,
+        LEN1,
+        LEN2,
+        TYPE,
         PAYLOAD,
-        CRC,
+        CRC1,
+        CRC2
     };
 
     TlvParser();
@@ -32,13 +37,18 @@ class TlvParser {
 
   private:
     ParseState state_;
-    uint8_t buffer_[32];
-    uint8_t pos_;
-    uint16_t expected_len_;
+    uint8_t current_msg_type_;
+    uint16_t expected_payload_len_;
     uint16_t crc_calculated_;
+    uint16_t received_crc_;
+    uint8_t payload_bytes_received_;
     uint8_t crc_bytes_received_;
+
+    // Current message being parsed directly into structs
     Traffic::LaneCounts lane_counts_;
+    uint32_t timestamp_accumulator_; // For building multi-byte timestamp
 
     bool validateFrame() const;
-    void dispatchMessage();
+    void parseLaneCountsByte(uint8_t byte);
+    void parseHeartbeatByte(uint8_t byte);
 };
