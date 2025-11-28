@@ -1,5 +1,5 @@
 #pragma once
-#include "cppcrc.h"
+#include "cppcrc.hpp"
 
 class Crc16 {
   public:

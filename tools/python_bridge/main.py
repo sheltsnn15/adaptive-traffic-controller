@@ -1,3 +1,4 @@
+import time
 from traffic_data_publisher import TrafficDataPublisher
 from traci_client import TraCIClient
 
@@ -35,14 +36,31 @@ traffic_data_publisher = TrafficDataPublisher(traci_client, tlv_publisher)
 
 
 # --- Run ---
-try:
-    traci_client.start()
-    traffic_data_publisher.run_forever(delay=0.5)
+def main():
+    try:
+        traci_client.start()
 
-except KeyboardInterrupt:
-    print("[EXIT] Interrupted by user.")
+        last_heartbeat = time.time()
+        heartbeat_interval = 2.0  # Send heartbeat every 2 seconds
 
-finally:
-    traci_client.close()
-    # mqtt_publisher.disconnect()
-    print("[EXIT] Cleaned up and disconnected.")
+        while True:
+            # Send traffic data
+            traffic_data_publisher.run_once()
+
+            # Send heartbeat if it's time
+            current_time = time.time()
+            if current_time - last_heartbeat >= heartbeat_interval:
+                tlv_publisher.send_heartbeat()
+                last_heartbeat = current_time
+
+            time.sleep(0.1)  # Shorter sleep for more responsive heartbeat
+
+    except KeyboardInterrupt:
+        print("[EXIT] Interrupted by user.")
+    finally:
+        traci_client.close()
+        print("[EXIT] Cleaned up and disconnected.")
+
+
+if __name__ == "__main__":
+    main()

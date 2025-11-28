@@ -1,4 +1,5 @@
 // Core/Src/app_main.cpp
+#include "app_main.hpp"
 #include "FreeRTOS.h"
 #include "main.h"
 #include "queue.h"
@@ -7,14 +8,6 @@
 #include "traffic_state_machine.hpp"
 #include "traffic_types.hpp"
 #include <cstdio>
-
-// Forward declarations to avoid including entire class definitions
-extern "C" {
-void app_main(void);
-void uartRxTask(void *params);
-void trafficCtrlTask(void *params);
-void uartTxTask(void *params);
-}
 
 // Global objects
 namespace {
@@ -59,15 +52,15 @@ extern "C" bool init_traffic_system() {
     if (result != pdPASS)
         return false;
 
-    result = xTaskCreate(trafficCtrlTask, "TrafficCtrl", 512, nullptr,
-                         tskIDLE_PRIORITY + 2, &traffic_ctrl_task);
-    if (result != pdPASS)
-        return false;
-
-    result = xTaskCreate(uartTxTask, "UartTx", 512, nullptr,
-                         tskIDLE_PRIORITY + 1, &uart_tx_task);
-    if (result != pdPASS)
-        return false;
+    // result = xTaskCreate(trafficCtrlTask, "TrafficCtrl", 512, nullptr,
+    //                      tskIDLE_PRIORITY + 2, &traffic_ctrl_task);
+    // if (result != pdPASS)
+    //     return false;
+    //
+    // result = xTaskCreate(uartTxTask, "UartTx", 512, nullptr,
+    //                      tskIDLE_PRIORITY + 1, &uart_tx_task);
+    // if (result != pdPASS)
+    //     return false;
 
     // Name tasks in SystemView
     name_traffic_tasks();
