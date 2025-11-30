@@ -46,6 +46,7 @@ class TlvParser { // direct byte-to-struct parsing
 
     // Current message being parsed directly into structs
     Traffic::LaneCounts lane_counts_;
+    Traffic::HeartBeat heartbeat_;
     uint32_t timestamp_accumulator_; // For building multi-byte timestamp
 
     bool validateFrame() const;

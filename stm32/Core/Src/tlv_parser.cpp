@@ -150,21 +150,14 @@ void TlvParser::parseLaneCountsByte(uint8_t byte) {
     }
 }
 
-void parseHeartbeatByte(uint8_t byte) {
+void TlvParser::parseHeartbeatByte(uint8_t byte) {
     switch (payload_bytes_received_) {
-    case 0: // timestamp
-    	timestamp_accumulator_ = byte;
-        break;
+    case 0:
     case 1:
-        timestamp_accumulator_ |= (uint32_t)byte << 8;
-        break;
     case 2:
-        timestamp_accumulator_ |= (uint32_t)byte << 16;
-        break;
     case 3:
-        timestamp_accumulator_ |= (uint32_t)byte << 24;
-        lane_counts_.ts_sec = timestamp_accumulator_;
-        printf("[TLV] Heartbeat uptime: %lu\n", lane_counts_.ts_sec);
+        heartbeat.uptime_ms = (heartbeat.uptime_ms << 8) | byte;
+        printf("[TLV] Heartbeat uptime: %lu\n", heartbeat_.uptime_ms);
         break;
     default:
         printf("[TLV] ERROR: Unexpected Heartbeat position %d\n",

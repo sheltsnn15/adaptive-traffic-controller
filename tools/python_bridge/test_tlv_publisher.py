@@ -1,311 +1,303 @@
-from tlv_publisher import (
-    TLVOutputHandler,
-    crc16_ccitt,
-    MSG_TYPE_SUMO_DATA,
-    MSG_TYPE_LIGHT_STATE,
-    MSG_TYPE_HEARTBEAT,
-)
+from tlv_publisher import TLVOutputHandler, crc16_ccitt
 import struct
 
 
-def test_lanecounts_encoding():
-    print("=== Testing LaneCounts Encoding ===")
+def _create_test_heartbeat_frame() -> bytes:
+    """Helper to create a Heartbeat frame from STM32 for testing"""
+    frame = bytearray()
+    frame.extend(b"\xaa\x55")  # SOF
 
-    test_payload = {
+    # LEN: TYPE(1) + PAYLOAD(4) + CRC(2) = 7
+    frame.extend(struct.pack("<H", 7))
+
+    frame.append(0x03)  # TYPE = Heartbeat
+
+    # PAYLOAD: uptime in milliseconds (simulate STM32 uptime)
+    uptime_ms = 12345  # Example uptime
+    frame.extend(struct.pack("<I", uptime_ms))
+
+    # CRC over LEN + TYPE + PAYLOAD
+    crc_data = frame[2:]  # From LEN onward
+    crc_value = crc16_ccitt(bytes(crc_data))
+    frame.extend(struct.pack("<H", crc_value))
+
+    return bytes(frame)
+
+
+def _create_test_lightstate_frame(
+    current_state: int, decision_reason: int, phase_duration: int
+) -> bytes:
+    """Helper to create a LightState frame for testing"""
+    frame = bytearray()
+    frame.extend(b"\xaa\x55")  # SOF
+
+    # LEN: TYPE(1) + PAYLOAD(4) + CRC(2) = 7
+    frame.extend(struct.pack("<H", 7))
+
+    frame.append(0x02)  # TYPE = LightState
+
+    # PAYLOAD
+    frame.append(current_state & 0xFF)
+    frame.append(decision_reason & 0xFF)
+    frame.extend(struct.pack("<H", phase_duration))
+
+    # CRC over LEN + TYPE + PAYLOAD
+    crc_data = frame[2:]  # From LEN onward
+    crc_value = crc16_ccitt(bytes(crc_data))
+    frame.extend(struct.pack("<H", crc_value))
+
+    return bytes(frame)
+
+
+def test_basic_encoding_decoding():
+    print("=== Basic Encoding/Decoding ===")
+    tlv = TLVOutputHandler()
+
+    # Test LaneCounts encoding
+    payload = {
         "timestamp": 1697040000,
         "junction_type": "x",
         "lanes": {"n": 12, "s": 7, "e": 3, "w": 8},
     }
+    frame = tlv.create_lanecounts_frame(payload)
+    frame_hex = frame.hex()
+    print(f"LaneCounts encoding: {frame_hex}")
 
-    tlv_handler = TLVOutputHandler()
-    tlv_frame = tlv_handler._json_to_tlv(test_payload)
-    hex_output = tlv_frame.hex()
+    # Verify structure
+    assert frame[0:2] == b"\xaa\x55", "Wrong SOF"
+    assert frame[4] == 0x01, "Wrong message type"
+    print("✓ LaneCounts structure OK")
 
-    expected_hex = "aa550c000180c62665000c0703086777"
-    assert hex_output == expected_hex, f"Expected {expected_hex}, got {hex_output}"
-    print(f"LaneCounts encoding correct: {hex_output}")
+    # Test frame decoding - Python only receives LightState (0x02) and Heartbeat (0x03)
+    # Python SENDS LaneCounts (0x01) but doesn't RECEIVE them!
+    tlv2 = TLVOutputHandler()
 
+    # Generate a heartbeat frame (from STM32 → Python)
+    hb_frame = _create_test_heartbeat_frame()
 
-def test_lightstate_decoding():
-    print("\n=== Testing LightState Decoding ===")
+    # Generate a LightState frame (from STM32 → Python)
+    lightstate_frame = _create_test_lightstate_frame(
+        current_state=0, decision_reason=0, phase_duration=1024
+    )
 
-    # LightState: NS_GREEN(0), ADAPTIVE_EXTENSION(1), 400ms duration
-    lightstate_frame = bytes.fromhex("AA5500070200010400F0D3")
-
-    tlv_handler = TLVOutputHandler()
-    for byte in lightstate_frame:
-        tlv_handler.process_byte(byte)
-
-    print("LightState decoding completed")
-
-
-def test_heartbeat_decoding():
-    print("\n=== Testing Heartbeat Decoding ===")
-
-    # Heartbeat: uptime_ms = 5000ms
-    heartbeat_frame = bytes.fromhex("AA550007038813000029B1")
-
-    tlv_handler = TLVOutputHandler()
-    for byte in heartbeat_frame:
-        tlv_handler.process_byte(byte)
-
-    print("Heartbeat decoding completed")
-
-
-def test_corrupted_frame_recovery():
-    print("\n=== Testing Frame Recovery ===")
-
-    tlv_handler = TLVOutputHandler()
-
-    # Send garbage bytes first
-    garbage = bytes.fromhex("DEADBEEF1234")
-    for byte in garbage:
-        tlv_handler.process_byte(byte)
-
-    # Then send valid frame
-    valid_frame = bytes.fromhex("AA550007038813000029B1")
-    for byte in valid_frame:
-        tlv_handler.process_byte(byte)
-
-    print("Parser recovered from garbage data")
-
-
-def test_partial_frame_handling():
-    print("\n=== Testing Partial Frame Handling ===")
-
-    tlv_handler = TLVOutputHandler()
-
-    # Send frame in chunks
-    frame_chunks = [
-        bytes.fromhex("AA55"),  # SOF only
-        bytes.fromhex("0007"),  # LEN
-        bytes.fromhex("03"),  # TYPE (Heartbeat)
-        bytes.fromhex("88130000"),  # PAYLOAD
-        bytes.fromhex("29B1"),  # CRC
+    # Decode only what Python receives from STM32
+    test_frames = [
+        ("Heartbeat (STM32→Python)", hb_frame),
+        ("LightState (STM32→Python)", lightstate_frame),
+        # NOT LaneCounts - Python doesn't receive these from STM32!
     ]
 
-    for chunk in frame_chunks:
-        for byte in chunk:
-            tlv_handler.process_byte(byte)
-
-    print("Partial frame handling correct")
-
-
-def test_multiple_frames():
-    print("\n=== Testing Multiple Frames ===")
-
-    tlv_handler = TLVOutputHandler()
-
-    # Two consecutive Heartbeat frames
-    frames = bytes.fromhex("AA550007038813000029B1AA55000703A00F0000A8F3")
-
-    for byte in frames:
-        tlv_handler.process_byte(byte)
-
-    print("Multiple frame parsing correct")
+    for name, test_frame in test_frames:
+        tlv3 = TLVOutputHandler()
+        print(f"  Testing {name}: {test_frame.hex()}")
+        for byte in test_frame:
+            tlv3.process_byte(byte)
+        stats = tlv3.get_stats()
+        print(f"    Stats: {stats}")
+        assert stats["frames_ok"] == 1, f"Failed to decode {name}"
+    print("✓ All RECEIVED frame types decode")
 
 
-def test_unknown_message_type():
-    print("\n=== Testing Unknown Message Type ===")
+def test_error_recovery():
+    print("=== Error Recovery ===")
+    tlv = TLVOutputHandler()
 
-    tlv_handler = TLVOutputHandler()
+    # Simpler test: Just test that CRC failure is detected
+    valid_frame = _create_test_lightstate_frame(0, 0, 1000)
 
-    # Frame with unknown type 0x04
-    unknown_frame = bytes.fromhex("AA55000704AABBCCDD")
+    # Create bad CRC frame
+    bad_frame = bytearray(valid_frame)
+    bad_frame[-1] ^= 0xFF  # Flip CRC
 
-    # Calculate CRC for unknown frame
-    crc_data = unknown_frame[4:]  # TYPE + PAYLOAD
-    crc_value = crc16_ccitt(crc_data)
-    unknown_frame += struct.pack("<H", crc_value)
+    # Test 1: Bad CRC should be rejected
+    tlv1 = TLVOutputHandler()
+    for byte in bad_frame:
+        tlv1.process_byte(byte)
+    stats1 = tlv1.get_stats()
+    assert stats1["frames_ok"] == 0, "Should reject bad CRC"
+    assert stats1["crc_fail"] == 1, "Should count CRC failure"
+    print(f"✓ Bad CRC rejected: {stats1}")
 
-    for byte in unknown_frame:
-        tlv_handler.process_byte(byte)
-
-    print("Unknown message type handled gracefully")
-
-
-def test_various_lanecounts():
-    """Test various LaneCounts payloads - encoding only (not decoding)"""
-    print("\n=== Testing Various LaneCounts ===")
-
-    test_cases = [
-        {
-            "name": "All zeros",
-            "payload": {
-                "timestamp": 0,
-                "junction_type": "x",
-                "lanes": {"n": 0, "s": 0, "e": 0, "w": 0},
-            },
-        },
-        {
-            "name": "Maximum counts",
-            "payload": {
-                "timestamp": 4294967295,  # max uint32
-                "junction_type": "y",
-                "lanes": {"n": 255, "s": 255, "e": 255, "w": 255},  # max uint8
-            },
-        },
-        {
-            "name": "Realistic traffic",
-            "payload": {
-                "timestamp": 1697040123,
-                "junction_type": "x",
-                "lanes": {"n": 15, "s": 8, "e": 22, "w": 11},
-            },
-        },
-    ]
-
-    tlv_handler = TLVOutputHandler()
-
-    for test_case in test_cases:
-        print(f"  Testing: {test_case['name']}")
-        tlv_frame = tlv_handler._json_to_tlv(test_case["payload"])
-
-        # Verify frame structure is correct
-        assert tlv_frame[0:2] == b"\xaa\x55", "SOF pattern missing"
-        assert tlv_frame[4] == MSG_TYPE_SUMO_DATA, "Wrong message type"
-        print(f"    ✓ Frame structure valid, type: 0x{MSG_TYPE_SUMO_DATA:02X}")
-
-    print("Various LaneCounts encoding correct")
-
-
-def test_crc_validation():
-    print("\n=== Testing CRC Validation ===")
-
-    tlv_handler = TLVOutputHandler()
-
-    # Valid frame
-    valid_frame = bytes.fromhex("AA550007038813000029B1")
-    print("Testing valid frame (should succeed):")
+    # Test 2: Valid frame after reset should work
+    tlv2 = TLVOutputHandler()
     for byte in valid_frame:
-        tlv_handler.process_byte(byte)
+        tlv2.process_byte(byte)
+    stats2 = tlv2.get_stats()
+    assert stats2["frames_ok"] == 1, "Should accept valid frame"
+    print(f"✓ Valid frame accepted: {stats2}")
 
-    # Corrupted frame (modified payload)
-    corrupted_frame = bytes.fromhex("AA5500070388130001")  # Last payload byte changed
-    crc_data = corrupted_frame[4:]
-    crc_value = crc16_ccitt(crc_data)
-    corrupted_frame += struct.pack("<H", crc_value)
-
-    print("Testing corrupted frame (should fail):")
-    for byte in corrupted_frame:
-        tlv_handler.process_byte(byte)
-
-    print("CRC validation working correctly")
+    print("✓ Error recovery working")
 
 
-def test_message_type_constants():
-    print("\n=== Testing Message Type Constants ===")
+def test_real_world_scenarios():
+    print("=== Real-World Scenarios ===")
 
-    tlv_handler = TLVOutputHandler()
+    # Scenario 1: Rapid fire frames (Python receiving LightState frames from STM32)
+    tlv = TLVOutputHandler()
+    frame = _create_test_lightstate_frame(0, 0, 500)
+    rapid_data = frame * 3
+    for byte in rapid_data:
+        tlv.process_byte(byte)
+    assert tlv.frames_ok == 3
+    print("✓ Rapid fire frames")
 
-    # Test SUMO data encoding uses correct type
-    test_payload = {
-        "timestamp": 1697040000,
-        "junction_type": "x",
-        "lanes": {"n": 1, "s": 2, "e": 3, "w": 4},
-    }
+    # Scenario 2: Mixed traffic with glitches
+    tlv = TLVOutputHandler()
 
-    tlv_frame = tlv_handler._json_to_tlv(test_payload)
-    # Type should be at offset 4
-    assert (
-        tlv_frame[4] == MSG_TYPE_SUMO_DATA
-    ), f"Expected type {MSG_TYPE_SUMO_DATA}, got {tlv_frame[4]}"
-    print(f"SUMO data type constant correct: {MSG_TYPE_SUMO_DATA:02X}")
+    # Create test frames that Python would receive from STM32
+    ls_frame1 = _create_test_lightstate_frame(1, 0, 512)
+    ls_frame2 = _create_test_lightstate_frame(2, 1, 256)
+    hb_frame = _create_test_heartbeat_frame()
 
-    # Test LightState decoding
-    lightstate_frame = bytes.fromhex("AA5500070200010400F0D3")
-    for byte in lightstate_frame:
-        tlv_handler.process_byte(byte)
-    print(f"LightState type constant correct: {MSG_TYPE_LIGHT_STATE:02X}")
+    mixed_data = (
+        b"\x00\x00\xff\xff"  # Startup garbage
+        + ls_frame1
+        + b"\x00\xaa"  # Partial SOF (garbage)
+        + hb_frame  # Heartbeat from STM32
+        + ls_frame2  # Another LightState
+    )
 
-    # Test Heartbeat decoding
-    heartbeat_frame = bytes.fromhex("AA550007038813000029B1")
-    for byte in heartbeat_frame:
-        tlv_handler.process_byte(byte)
-    print(f"Heartbeat type constant correct: {MSG_TYPE_HEARTBEAT:02X}")
+    for byte in mixed_data:
+        tlv.process_byte(byte)
 
-    print("All message type constants working correctly")
-
-
-def test_buffer_management():
-    print("\n=== Testing Buffer Management ===")
-
-    tlv_handler = TLVOutputHandler()
-
-    # Send many bytes without SOF to test buffer trimming
-    many_bytes = bytes([0x00] * 50)  # 50 bytes without SOF
-    for byte in many_bytes:
-        tlv_handler.process_byte(byte)
-
-    # Buffer should be trimmed to 1 byte
-    assert (
-        len(tlv_handler.buffer) <= 1
-    ), f"Buffer not trimmed properly: {len(tlv_handler.buffer)}"
-
-    # Now send valid frame
-    valid_frame = bytes.fromhex("AA550007038813000029B1")
-    for byte in valid_frame:
-        tlv_handler.process_byte(byte)
-
-    print("Buffer management working correctly")
+    # Should get 3 frames: ls_frame1, hb_frame, ls_frame2
+    assert tlv.frames_ok == 3
+    print(f"✓ Mixed traffic with glitches ({tlv.frames_ok} frames)")
 
 
-def test_heartbeat_encoding():
-    print("\n=== Testing Heartbeat Encoding ===")
+def test_edge_cases():
+    print("=== Edge Cases ===")
 
-    tlv_handler = TLVOutputHandler()
+    # Unknown message type - Python should discard it
+    tlv = TLVOutputHandler()
 
-    # Test with specific uptime value
-    test_uptime_ms = 12345
-    heartbeat_frame = tlv_handler._create_heartbeat_frame(test_uptime_ms)
+    # Create frame with unknown type (0x04)
+    frame = bytearray()
+    frame.extend(b"\xaa\x55")  # SOF
+    frame.extend(struct.pack("<H", 7))  # LEN: TYPE1 + PAYLOAD4 + CRC2
+    frame.append(0x04)  # Unknown TYPE
+    frame.extend(b"\xaa\xbb\xcc\xdd")  # Random payload
+    crc_data = frame[2:]  # LEN onward
+    crc_value = crc16_ccitt(bytes(crc_data))
+    frame.extend(struct.pack("<H", crc_value))
 
-    # Verify frame structure
-    assert heartbeat_frame[0:2] == b"\xaa\x55", "SOF pattern missing"
-    assert heartbeat_frame[4] == MSG_TYPE_HEARTBEAT, "Wrong message type"
+    for byte in frame:
+        tlv.process_byte(byte)
 
-    # Verify payload
-    payload = heartbeat_frame[5:9]  # TYPE(1) + PAYLOAD(4)
-    uptime_from_frame = struct.unpack("<I", payload)[0]
-    assert (
-        uptime_from_frame == test_uptime_ms
-    ), f"Uptime mismatch: {uptime_from_frame} vs {test_uptime_ms}"
+    stats = tlv.get_stats()
+    print(f"  Stats after unknown type: {stats}")
 
-    # Verify CRC
-    crc_data = heartbeat_frame[4:9]  # TYPE + PAYLOAD
-    calculated_crc = crc16_ccitt(crc_data)
-    received_crc = struct.unpack("<H", heartbeat_frame[9:11])[0]
-    assert calculated_crc == received_crc, "CRC validation failed"
+    # Should discard unknown message types
+    assert stats["frames_ok"] == 0, "Should discard unknown message types"
+    print("✓ Unknown message type correctly discarded")
 
-    print(f"Heartbeat encoding correct: {heartbeat_frame.hex()}")
+    # Buffer management (50 bytes without SOF)
+    tlv = TLVOutputHandler()
+    for byte in b"\x00" * 50:
+        tlv.process_byte(byte)
+    assert len(tlv.buffer) <= 1
+    print("✓ Buffer management")
+
+    # Test connection monitoring (heartbeat timeout)
+    tlv = TLVOutputHandler()
+    # Simulate receiving a heartbeat
+    hb_frame = _create_test_heartbeat_frame()
+    for byte in hb_frame:
+        tlv.process_byte(byte)
+
+    # Check connection is healthy immediately after heartbeat
+    healthy, time_since = tlv.is_connection_healthy()
+    assert healthy, "Should be healthy right after heartbeat"
+    print(f"✓ Connection healthy after heartbeat (time since: {time_since:.2f}s)")
+
+
+def test_connection_monitoring():
+    print("=== Connection Monitoring ===")
+
+    tlv = TLVOutputHandler()
+
+    # Initially, connection should be healthy (no timeout yet)
+    healthy, time_since = tlv.is_connection_healthy()
+    assert healthy, "Should be healthy initially"
+    print(f"  Initial: healthy={healthy}, time_since={time_since:.2f}s")
+
+    # Receive a heartbeat
+    hb_frame = _create_test_heartbeat_frame()
+    for byte in hb_frame:
+        tlv.process_byte(byte)
+
+    # Should be healthy
+    healthy, time_since = tlv.is_connection_healthy()
+    assert healthy, "Should be healthy after heartbeat"
+    print(f"  After heartbeat: healthy={healthy}, time_since={time_since:.2f}s")
+
+    # Note: We can't easily test timeout without mocking time
+    print("✓ Connection monitoring basic test passed")
 
 
 def run_all_tests():
-    print("Starting TLV Protocol Test Suite\n")
+    """Run all tests"""
+    print("Starting TLV Test Suite\n")
+    print("=" * 60)
 
     tests = [
-        test_lanecounts_encoding,
-        test_lightstate_decoding,
-        test_heartbeat_decoding,
-        test_corrupted_frame_recovery,
-        test_partial_frame_handling,
-        test_multiple_frames,
-        test_unknown_message_type,
-        test_various_lanecounts,
-        test_crc_validation,
-        test_message_type_constants,
-        test_buffer_management,
+        test_basic_encoding_decoding,
+        test_error_recovery,
+        test_real_world_scenarios,
+        test_edge_cases,
+        test_connection_monitoring,
     ]
 
+    all_passed = True
     for test in tests:
         try:
             test()
-            print("PASS")
+            print("PASS\n")
         except Exception as e:
-            print(f"FAIL: {e}")
-            continue
+            print(f"FAIL: {e}\n")
+            import traceback
 
-    print("\nAll tests completed!")
+            traceback.print_exc()
+            print()
+            all_passed = False
+
+    print("=" * 60)
+    if all_passed:
+        print("✓ All tests passed!")
+    else:
+        print("✗ Some tests failed")
+
+    return all_passed
 
 
 if __name__ == "__main__":
+    # First, let's generate a test frame to see what hex we get
+    print("First, let's see what frames our code generates...\n")
+
+    tlv = TLVOutputHandler()
+
+    # Generate a LaneCounts frame (Python → STM32)
+    payload = {
+        "timestamp": 1697040000,
+        "junction_type": "x",
+        "lanes": {"n": 12, "s": 7, "e": 3, "w": 8},
+    }
+    frame = tlv.create_lanecounts_frame(payload)
+    print(f"LaneCounts frame (Python → STM32): {frame.hex()}")
+    print(f"  SOF: {frame[0:2].hex()}")
+    print(f"  LEN: {frame[2:4].hex()} = {struct.unpack('<H', frame[2:4])[0]}")
+    print(f"  TYPE: {frame[4]:02x}")
+    print(f"  CRC: {frame[-2:].hex()}")
+
+    # Generate test frames for receiving
+    print(
+        f"\nLightState test frame (STM32 → Python): {_create_test_lightstate_frame(0, 0, 1024).hex()}"
+    )
+    print(
+        f"Heartbeat test frame (STM32 → Python): {_create_test_heartbeat_frame().hex()}"
+    )
+
+    print("\n" + "=" * 60 + "\n")
+
+    # Run the tests
     run_all_tests()

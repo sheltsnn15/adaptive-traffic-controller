@@ -50,7 +50,7 @@ def main():
             # Send heartbeat if it's time
             current_time = time.time()
             if current_time - last_heartbeat >= heartbeat_interval:
-                tlv_publisher.send_heartbeat()
+                tlv_publisher.create_heartbeat_frame()
                 last_heartbeat = current_time
 
             time.sleep(0.1)  # Shorter sleep for more responsive heartbeat

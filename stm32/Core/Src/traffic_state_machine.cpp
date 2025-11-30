@@ -11,8 +11,8 @@ void TrafficStateMachine::processLaneCounts(const Traffic::LaneCounts &counts) {
 void TrafficStateMachine::update(uint32_t elapsed_ms) {}
 
 Traffic::LightStatePayload TrafficStateMachine::getCurrentCommand() const {
-	Traffic::LightStatePayload cmd{};
-	return cmd;
+    Traffic::LightStatePayload cmd{};
+    return cmd;
 }
 
 bool TrafficStateMachine::checkExtensionCondition() const { return true; }
