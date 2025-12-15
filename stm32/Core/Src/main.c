@@ -49,10 +49,10 @@
 /* Private macro
  * -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define DWT_CTRL (*(volatile uint32_t *)0xE0001000)
-#define DWT_CYCCNT (*(volatile uint32_t *)0xE0001004)
-#define DEMCR (*(volatile uint32_t *)0xE000EDFC)
-#define DEMCR_TRCENA (1 << 24)
+// #define DWT_CTRL (*(volatile uint32_t *)0xE0001000)
+// #define DWT_CYCCNT (*(volatile uint32_t *)0xE0001004)
+// #define DEMCR (*(volatile uint32_t *)0xE000EDFC)
+// #define DEMCR_TRCENA (1 << 24)
 /* USER CODE END PM */
 
 /* Private variables
@@ -72,7 +72,7 @@ static void MX_USART2_UART_Init (void);
 void enableCycleCounter (void);
 uint32_t getCycleCount (void);
 void vApplicationStackOverflowHook (TaskHandle_t xTask, char *pcTaskName);
-
+static void SWO_Init (uint32_t cpu_hz, uint32_t swo_hz);
 /* USER CODE END PFP */
 
 /* Private user code
@@ -115,13 +115,19 @@ main (void)
     MX_GPIO_Init ();
     MX_USART2_UART_Init ();
     /* USER CODE BEGIN 2 */
-    SEGGER_SYSVIEW_Conf ();
-    SEGGER_SYSVIEW_Start ();
+
+    SystemCoreClockUpdate ();
+    SWO_Init (SystemCoreClock, 2000000);
+    setvbuf (stdout, NULL, _IONBF, 0);
 
     enableCycleCounter ();
-    app_main ();
+    SEGGER_SYSVIEW_Conf ();
+    // SEGGER_SYSVIEW_Start ();
 
+    app_main ();
     vTaskStartScheduler ();
+
+    Error_Handler ();
 
     /* USER CODE END 2 */
 
@@ -258,19 +264,35 @@ MX_GPIO_Init (void)
 }
 
 /* USER CODE BEGIN 4 */
+static void
+SWO_Init (uint32_t cpu_hz, uint32_t swo_hz)
+{
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DBGMCU->CR |= DBGMCU_CR_TRACE_IOEN;
+
+    ITM->LAR = 0xC5ACCE55;
+
+    TPI->SPPR = 2;                     // NRZ
+    TPI->ACPR = (cpu_hz / swo_hz) - 1; // 84MHz/2MHz => 41
+    TPI->FFCR = 0x100;                 // disable formatter
+
+    ITM->TPR = 0xFFFFFFFF; // allow stimulus ports
+    ITM->TCR = ITM_TCR_ITMENA_Msk | ITM_TCR_SWOENA_Msk;
+    ITM->TER = 1; // enable port 0
+}
 
 void
 enableCycleCounter (void)
 {
-    DEMCR |= DEMCR_TRCENA; // Enable trace
-    DWT_CYCCNT = 0;        // Reset cycle counter
-    DWT_CTRL |= 1;         // Enable cycle counter
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // enable trace
+    DWT->CYCCNT = 0;                                // reset counter
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;            // enable counter
 }
 
 uint32_t
 getCycleCount (void)
 {
-    return DWT_CYCCNT;
+    return DWT->CYCCNT;
 }
 
 void
@@ -308,7 +330,6 @@ Error_Handler (void)
     }
     /* USER CODE END Error_Handler_Debug */
 }
-
 #ifdef USE_FULL_ASSERT
 /**
  * @brief  Reports the name of the source file and the source line number

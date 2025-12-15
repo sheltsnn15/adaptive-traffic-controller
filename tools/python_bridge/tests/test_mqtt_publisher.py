@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from mqtt_publisher import MQTTPublisher
+from ..mqtt_publisher import MQTTPublisher
 import json
 
 """

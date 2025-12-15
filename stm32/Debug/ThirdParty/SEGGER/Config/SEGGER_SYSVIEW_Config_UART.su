@@ -1,5 +1,0 @@
-../ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.c:103:12:_SysView_TrySend	16	static
-../ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.c:132:13:_SysView_OnRxComplete	24	static
-../ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.c:157:12:_SysView_OnTxComplete	16	static
-../ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.c:177:6:SEGGER_SYSVIEW_X_OnEventRecorded	16	static
-../ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.c:188:6:SYSVIEW_UART_Config	16	static

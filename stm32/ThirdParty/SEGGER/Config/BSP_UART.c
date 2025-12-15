@@ -29,7 +29,7 @@ void BSP_UART_Write1(unsigned port, uint8_t byte)
 }
 
 /* HAL callbacks ----------------------------------------------------*/
-
+/*
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart)
 {
     if ((huart == &huart2) && _RxCB)
@@ -39,6 +39,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart)
     // restart reception
     HAL_UART_Receive_IT(&huart2, huart->pRxBuffPtr, 1);
 }
+*/
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef* huart)
 {

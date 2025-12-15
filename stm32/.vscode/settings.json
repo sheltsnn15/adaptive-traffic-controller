@@ -1,3 +1,4 @@
 {
-  "cmake.sourceDirectory": "/home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS"
+  "cmake.sourceDirectory": "/home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS",
+  "cmake.ignoreCMakeListsMissing": true
 }

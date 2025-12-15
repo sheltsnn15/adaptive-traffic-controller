@@ -21,7 +21,8 @@ class TrafficDataPublisher:
             }
             # print(f"SUMO Data: ts={timestamp}, lanes={lane_counts}")
             # Step 4: Publish via sender
-            self.sender.send(payload)
+            # self.sender.send(payload)
+            self.sender.send_lanecounts(payload)
         except Exception as e:
             print(f"[ERROR] Failed to publish traffic data: {e}")
 

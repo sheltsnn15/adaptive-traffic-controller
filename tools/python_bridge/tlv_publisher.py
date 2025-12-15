@@ -133,7 +133,7 @@ class TLVOutputHandler:
         self.buffer.append(byte)
 
         if len(self.buffer) > MAX_FRAME_LEN * 2:
-            print("[WARNING] Buffer overflow, resetting")
+            print("[TLV WARNING] Buffer overflow, resetting")
             self._reset_parser()
             return None
 
@@ -159,7 +159,7 @@ class TLVOutputHandler:
             self.state = "READING_HEADER"
         else:
             # Not SOF, discard first byte
-            self.buffer.pop(0)
+            del self.buffer[0]
             self.resyncs += 1
 
     def _read_header(self) -> None:
@@ -171,7 +171,7 @@ class TLVOutputHandler:
             # LEN field (little-endian)
             total_len = struct.unpack("<H", self.buffer[OFFSET_LEN:OFFSET_TYPE])[0]
         except struct.error:
-            print("[ERROR] Failed to unpack LEN field")
+            print("[TLV ERROR] Failed to unpack LEN field")
             self._reset_parser()
             return
 
@@ -180,7 +180,7 @@ class TLVOutputHandler:
         # Maximum: based on payload size
         max_len_field = 1 + MAX_PAYLOAD_LEN + CRC_SIZE  # TYPE(1) + max_payload + CRC(2)
         if total_len < 3 or total_len > max_len_field:  # Reasonable upper bound
-            print(f"[ERROR] Invalid LEN: {total_len}")
+            print(f"[TLV ERROR] Invalid LEN: {total_len}")
             self._reset_parser()
             return
 
@@ -202,7 +202,7 @@ class TLVOutputHandler:
         elif self.current_type == MSG_TYPE_HEARTBEAT:
             self._parse_heartbeat(payload_bytes)
         else:
-            print(f"[ERROR] Unknown message type: 0x{self.current_type:02X}")
+            print(f"[TLV ERROR] Unknown message type: 0x{self.current_type:02X}")
             self._reset_parser()
             return
 
@@ -211,7 +211,7 @@ class TLVOutputHandler:
     def _parse_light_state(self, payload_bytes: bytes) -> None:
         # Parse LightState message from STM32
         if len(payload_bytes) != LIGHT_STATE_PAYLOAD_SIZE:
-            print(f"[ERROR] LightState wrong size: {len(payload_bytes)}")
+            print(f"[TLV ERROR] LightState wrong size: {len(payload_bytes)}")
             self.current_payload = None
             return
 
@@ -226,13 +226,13 @@ class TLVOutputHandler:
                 "phase_duration": phase_duration,
             }
         except struct.error:
-            print("[ERROR] Failed to parse LightState payload")
+            print("[TLV ERROR] Failed to parse LightState payload")
             self.current_payload = None
 
     def _parse_heartbeat(self, payload_bytes: bytes) -> None:
         # Parse Heartbeat message
         if len(payload_bytes) != HEARTBEAT_PAYLOAD_SIZE:
-            print(f"[ERROR] Heartbeat wrong size: {len(payload_bytes)}")
+            print(f"[TLV ERROR] Heartbeat wrong size: {len(payload_bytes)}")
             self.current_payload = None
             return
 
@@ -244,7 +244,7 @@ class TLVOutputHandler:
                 "uptime_ms": uptime_ms,
             }
         except struct.error:
-            print("[ERROR] Failed to parse Heartbeat payload")
+            print("[TLV ERROR] Failed to parse Heartbeat payload")
             self.current_payload = None
 
     def _read_crc(self) -> Optional[Dict[str, Any]]:
@@ -262,7 +262,7 @@ class TLVOutputHandler:
             # Received CRC
             received_crc = struct.unpack("<H", self.buffer[crc_start:required_bytes])[0]
         except struct.error:
-            print("[ERROR] Failed to extract CRC fields")
+            print("[TLV ERROR] Failed to extract CRC fields")
             self._reset_parser()
             return None
 
@@ -271,7 +271,9 @@ class TLVOutputHandler:
 
         # CRC covers: LEN(2) + TYPE(1) + PAYLOAD(n) bytes
         if calculated_crc != received_crc:
-            print(f"CRC failed: calc {calculated_crc:04X}, recv {received_crc:04X}")
+            print(
+                f"[TLV ERROR] CRC failed: calc {calculated_crc:04X}, recv {received_crc:04X}"
+            )
             self.crc_fail += 1
             # CRC fail: skip 1 byte and resync
             self.buffer.pop(0)

@@ -1,4 +1,4 @@
-from tlv_publisher import TLVOutputHandler, crc16_ccitt
+from ..tlv_publisher import TLVOutputHandler, crc16_ccitt
 import struct
 
 
@@ -84,7 +84,6 @@ def test_basic_encoding_decoding():
     test_frames = [
         ("Heartbeat (STM32→Python)", hb_frame),
         ("LightState (STM32→Python)", lightstate_frame),
-        # NOT LaneCounts - Python doesn't receive these from STM32!
     ]
 
     for name, test_frame in test_frames:

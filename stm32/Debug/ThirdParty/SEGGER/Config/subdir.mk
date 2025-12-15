@@ -5,19 +5,13 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../ThirdParty/SEGGER/Config/BSP_UART.c \
-../ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c \
-../ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.c 
+../ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c 
 
 C_DEPS += \
-./ThirdParty/SEGGER/Config/BSP_UART.d \
-./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.d \
-./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.d 
+./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.d 
 
 OBJS += \
-./ThirdParty/SEGGER/Config/BSP_UART.o \
-./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.o \
-./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.o 
+./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.o 
 
 
 # Each subdirectory must supply rules for building sources it contributes
@@ -27,7 +21,7 @@ ThirdParty/SEGGER/Config/%.o ThirdParty/SEGGER/Config/%.su ThirdParty/SEGGER/Con
 clean: clean-ThirdParty-2f-SEGGER-2f-Config
 
 clean-ThirdParty-2f-SEGGER-2f-Config:
-	-$(RM) ./ThirdParty/SEGGER/Config/BSP_UART.cyclo ./ThirdParty/SEGGER/Config/BSP_UART.d ./ThirdParty/SEGGER/Config/BSP_UART.o ./ThirdParty/SEGGER/Config/BSP_UART.su ./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.cyclo ./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.d ./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.o ./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.su ./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.cyclo ./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.d ./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.o ./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_UART.su
+	-$(RM) ./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.cyclo ./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.d ./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.o ./ThirdParty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.su
 
 .PHONY: clean-ThirdParty-2f-SEGGER-2f-Config
 

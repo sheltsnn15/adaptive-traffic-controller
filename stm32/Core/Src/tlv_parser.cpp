@@ -9,7 +9,10 @@
 TlvParser::TlvParser()
     : state_(ParseState::IDLE), current_msg_type_(0), expected_payload_len_(0),
       crc_calculated_(0xFFFF), received_crc_(0), payload_bytes_received_(0),
-      crc_bytes_received_(0), timestamp_accumulator_(0) {}
+      crc_bytes_received_(0), timestamp_accumulator_(0), frames_ok_(0),
+      crc_fails_(0), resyncs_(0) {
+    memset(&lane_counts_, 0, sizeof(lane_counts_));
+}
 
 uint8_t TlvParser::parseByte(uint8_t byte) {
     switch (state_) {
@@ -23,18 +26,30 @@ uint8_t TlvParser::parseByte(uint8_t byte) {
     case ParseState::SOF1:
         if (byte == 0x55) {
             state_ = ParseState::LEN1;
+        } else if (byte == 0xAA) {
+            // stay in SOF1
+            crc_calculated_ = 0xFFFF;
         } else {
-            reset();
+            resetForResync();
+            // return parseByte(byte);
         }
         break;
 
     case ParseState::LEN1:
-        expected_payload_len_ = byte << 8;
+        expected_payload_len_ = byte;
+        crc_calculated_ = Crc16::calculate_byte(byte, crc_calculated_);
         state_ = ParseState::LEN2;
         break;
 
     case ParseState::LEN2:
-        expected_payload_len_ |= byte;
+        expected_payload_len_ |= (uint16_t)byte << 8;
+        crc_calculated_ = Crc16::calculate_byte(byte, crc_calculated_);
+        // Validate LEN: TYPE(1) + PAYLOAD + CRC(2)
+        if (expected_payload_len_ < 3 || expected_payload_len_ > 64) {
+            printf("[TLV] Invalid LEN: %u\n", expected_payload_len_);
+            resetForResync();
+            return 0;
+        }
         state_ = ParseState::TYPE;
         break;
 
@@ -42,55 +57,55 @@ uint8_t TlvParser::parseByte(uint8_t byte) {
         current_msg_type_ = byte;
         crc_calculated_ = Crc16::calculate_byte(byte, crc_calculated_);
 
-        if (current_msg_type_ != 0x01 && current_msg_type_ != 0x03) {
-            reset();
+        if (current_msg_type_ != 0x01 && expected_payload_len_ != 12) {
+            printf("[TLV] Unexpected message type: 0x%02X\n",
+                   current_msg_type_);
+            resetForResync();
             break;
         }
 
         payload_bytes_received_ = 0;
         timestamp_accumulator_ = 0;
+        memset(&lane_counts_, 0, sizeof(lane_counts_));
         state_ = ParseState::PAYLOAD;
         break;
 
     case ParseState::PAYLOAD:
         crc_calculated_ = Crc16::calculate_byte(byte, crc_calculated_);
         // Parse based on message type and byte position
-        switch (current_msg_type_) {
-        case 0x01: // LaneCounts
+        if (current_msg_type_ == 0x01) {
             parseLaneCountsByte(byte);
-            break;
-        case 0x03: // Heartbeat
-            parseHeartbeatByte(byte);
-            break;
         }
 
         payload_bytes_received_++;
 
         // Check if payload complete
-        if (payload_bytes_received_ >= expected_payload_len_) {
+        if (payload_bytes_received_ >= expected_payload_len_ - 3) {
             state_ = ParseState::CRC1;
             crc_bytes_received_ = 0;
         }
         break;
 
     case ParseState::CRC1:
-        received_crc_ = byte << 8;
+        received_crc_ = byte;
         state_ = ParseState::CRC2;
         crc_bytes_received_++;
         break;
 
     case ParseState::CRC2:
-        received_crc_ |= byte;
+        received_crc_ |= (uint16_t)byte << 8;
         crc_bytes_received_++;
 
         if (crc_bytes_received_ == 2) {
             // Complete frame received
             if (validateFrame()) {
+                frames_ok_++;
                 uint8_t msg_type = current_msg_type_;
                 reset();
                 return msg_type;
             } else {
-                reset(); // CRC failed
+                crc_fails_++;
+                resetForResync();
             }
         }
         break;
@@ -124,7 +139,6 @@ void TlvParser::parseLaneCountsByte(uint8_t byte) {
     case 3:
         timestamp_accumulator_ |= (uint32_t)byte << 24;
         lane_counts_.ts_sec = timestamp_accumulator_;
-        printf("[TLV] Timestamp: %lu\n", lane_counts_.ts_sec);
         break;
     case 4: // junction_type
         lane_counts_.junction_type = byte;
@@ -140,27 +154,9 @@ void TlvParser::parseLaneCountsByte(uint8_t byte) {
         break;
     case 8:
         lane_counts_.w = byte;
-        printf("[TLV] Counts: n=%d, s=%d, e=%d, w=%d\n", lane_counts_.n,
-               lane_counts_.s, lane_counts_.e, lane_counts_.w);
         break;
     default:
         printf("[TLV] ERROR: Unexpected LaneCounts byte position %d\n",
-               payload_bytes_received_);
-        break;
-    }
-}
-
-void TlvParser::parseHeartbeatByte(uint8_t byte) {
-    switch (payload_bytes_received_) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-        heartbeat.uptime_ms = (heartbeat.uptime_ms << 8) | byte;
-        printf("[TLV] Heartbeat uptime: %lu\n", heartbeat_.uptime_ms);
-        break;
-    default:
-        printf("[TLV] ERROR: Unexpected Heartbeat position %d\n",
                payload_bytes_received_);
         break;
     }
@@ -177,14 +173,85 @@ void TlvParser::reset() {
     timestamp_accumulator_ = 0;
 }
 
+void TlvParser::resetForResync() {
+    resyncs_++;
+    reset();
+}
+
 bool TlvParser::encodeLightState(const Traffic::LightStatePayload &cmd,
                                  uint8_t *buffer, size_t &len) {
-    // TODO: Implementation for sending LightState to SUMO
+    // STM32 → Python: LightState (0x02)
+    // Frame: SOF(2) + LEN(2) + TYPE(1) + PAYLOAD(4) + CRC(2) = 11 bytes total
+    if (len < 11) {
+        return false;
+    }
+
+    // SOF
+    buffer[0] = 0xAA;
+    buffer[1] = 0x55;
+    // LEN: TYPE(1) + PAYLOAD(4) + CRC(2) = 7
+    buffer[2] = 7;
+    buffer[3] = 0;
+
+    // TYPE
+    buffer[4] = 0x02;
+
+    // PAYLOAD
+    buffer[5] = cmd.current_state;
+    buffer[6] = cmd.decision_reason;
+    buffer[7] = cmd.phase_duration & 0xFF;
+    buffer[8] = (cmd.phase_duration >> 8) & 0xFF;
+
+    // Calculate CRC over LEN+TYPE+PAYLOAD
+    uint16_t crc = 0xFFFF;
+    for (size_t i = 2; i <= 8; i++) {
+        crc = Crc16::calculate_byte(buffer[i], crc);
+    }
+
+    buffer[9] = crc & 0xFF;
+    buffer[10] = (crc >> 8) & 0xFF;
+
+    len = 11;
     return true;
 }
 
 bool TlvParser::encodeHeartbeat(const Traffic::HeartBeat &hb, uint8_t *buffer,
                                 size_t &len) {
-    // TODO: Implementation for sending Heartbeat to SUMO
+
+    // STM32 → Python: Heartbeat(0x03)
+    // Frame: SOF(2) + LEN(2) + TYPE(1) + PAYLOAD(7) + CRC(2) = 14 bytes total
+    if (len < 14) {
+        return false;
+    }
+
+    // SOF
+    buffer[0] = 0xAA;
+    buffer[1] = 0x55;
+    // LEN: TYPE(1) + PAYLOAD(7) + CRC(2) = 10
+    buffer[2] = 10;
+    buffer[3] = 0;
+
+    // TYPE
+    buffer[4] = 0x03;
+
+    // PAYLOAD
+    buffer[5] = hb.uptime_ms & 0xFF;
+    buffer[6] = (hb.uptime_ms >> 8) & 0xFF;
+    buffer[7] = (hb.uptime_ms >> 16) & 0xFF;
+    buffer[8] = (hb.uptime_ms >> 24) & 0xFF;
+    buffer[9] = hb.seq & 0xFF;
+    buffer[10] = (hb.seq >> 8) & 0xFF;
+    buffer[11] = hb.status;
+
+    // Calculate CRC over LEN+TYPE+PAYLOAD
+    uint16_t crc = 0xFFFF;
+    for (size_t i = 2; i <= 11; i++) {
+        crc = Crc16::calculate_byte(buffer[i], crc);
+    }
+
+    buffer[12] = crc & 0xFF;
+    buffer[13] = (crc >> 8) & 0xFF;
+
+    len = 14;
     return true;
 }

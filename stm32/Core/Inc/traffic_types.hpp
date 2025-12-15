@@ -11,7 +11,7 @@ enum class LightState : uint8_t {
     ALL_RED = 4
 };
 
-enum class DecisonReason : uint8_t {
+enum class DecisionReason : uint8_t {
     FIXED_TIME = 0,
     ADAPTIVE_EXTENSION = 1,
     EMERGENCY = 2
@@ -33,6 +33,8 @@ struct LightStatePayload {
 
 struct HeartBeat {
     uint32_t uptime_ms; // Sys uptime
+    uint16_t seq;
+    uint8_t status;
 };
 
 #pragma pack(pop) // Restores the previous packing alignment

@@ -14,9 +14,9 @@ file(GLOB SEGGER_CORE_SRCS CONFIGURE_DEPENDS
 set(SEGGER_OS_SRCS
 				OS/SEGGER_SYSVIEW_FreeRTOS.c
 				Config/SEGGER_SYSVIEW_Config_FreeRTOS.c
-				Config/SEGGER_SYSVIEW_Config_UART.c
+				# Config/SEGGER_SYSVIEW_Config_UART.c
 				OS/SEGGER_SYSVIEW_REC.c
-				Config/BSP_UART.c
+				# Config/BSP_UART.c
 )
 
 set(SEGGER_ASM_SRCS
@@ -32,7 +32,7 @@ target_include_directories(segger PUBLIC
 				${CMAKE_CURRENT_LIST_DIR}/SEGGER
 				${CMAKE_CURRENT_LIST_DIR}/OS
 				${CMAKE_CURRENT_LIST_DIR}/Config
-				${CMAKE_SOURCE_DIR}/ThirdParty/FreeRTOS/include     # <─ FreeRTOS.h
+				${CMAKE_SOURCE_DIR}/ThirdParty/FreeRTOS/include
 				${FREERTOS_CONFIG_DIR}
 				${CMAKE_SOURCE_DIR}/ThirdParty/FreeRTOS/portable/GCC/ARM_CM4F
 )

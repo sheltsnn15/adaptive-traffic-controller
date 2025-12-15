@@ -15,7 +15,7 @@ class TlvParser { // direct byte-to-struct parsing
         TYPE,
         PAYLOAD,
         CRC1,
-        CRC2
+        CRC2,
     };
 
     TlvParser();
@@ -28,6 +28,11 @@ class TlvParser { // direct byte-to-struct parsing
 
     // Reset parser state
     void reset();
+
+    // Statistics
+    uint32_t getFramesOk() const { return frames_ok_; }
+    uint32_t getCrcFails() const { return crc_fails_; }
+    uint32_t getResyncs() const { return resyncs_; }
 
     // Encoding methods
     static bool encodeLightState(const Traffic::LightStatePayload &cmd,
@@ -44,12 +49,16 @@ class TlvParser { // direct byte-to-struct parsing
     uint8_t payload_bytes_received_;
     uint8_t crc_bytes_received_;
 
+    // Statistics
+    uint32_t frames_ok_;
+    uint32_t crc_fails_;
+    uint32_t resyncs_;
+
     // Current message being parsed directly into structs
     Traffic::LaneCounts lane_counts_;
-    Traffic::HeartBeat heartbeat_;
     uint32_t timestamp_accumulator_; // For building multi-byte timestamp
 
     bool validateFrame() const;
     void parseLaneCountsByte(uint8_t byte);
-    void parseHeartbeatByte(uint8_t byte);
+    void resetForResync();
 };

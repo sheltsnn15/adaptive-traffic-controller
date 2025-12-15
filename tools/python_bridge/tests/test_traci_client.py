@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch
-from traci_client import TraCIClient  # adjust path as needed
+from ..traci_client import TraCIClient  # adjust path as needed
 from traci import TraCIException
 
 

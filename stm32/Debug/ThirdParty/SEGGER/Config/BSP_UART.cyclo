@@ -1,6 +1,0 @@
-../ThirdParty/SEGGER/Config/BSP_UART.c:9:6:BSP_UART_Init	1
-../ThirdParty/SEGGER/Config/BSP_UART.c:25:6:BSP_UART_Write1	1
-../ThirdParty/SEGGER/Config/BSP_UART.c:33:6:HAL_UART_RxCpltCallback	3
-../ThirdParty/SEGGER/Config/BSP_UART.c:43:6:HAL_UART_TxCpltCallback	3
-../ThirdParty/SEGGER/Config/BSP_UART.c:55:6:BSP_UART_SetReadCallback	1
-../ThirdParty/SEGGER/Config/BSP_UART.c:61:6:BSP_UART_SetWriteCallback	1
