@@ -37,6 +37,14 @@ struct HeartBeat {
     uint8_t status;
 };
 
+enum HbStatus : uint8_t {
+    HB_OK = 0,
+    HB_UART_RX_ACTIVE = 1 << 0, // receiving lane counts
+    HB_UART_TX_ACTIVE = 1 << 1, // sending is possible
+    HB_CRC_FAIL_SEEN = 1 << 2,  // parser saw CRC errors
+    HB_RESYNC_SEEN = 1 << 3,    // parser resync events happened
+};
+
 #pragma pack(pop) // Restores the previous packing alignment
 
 } // namespace Traffic

@@ -43,8 +43,8 @@ Core/Src/app_main.o: ../Core/Src/app_main.cpp ../Core/Inc/app_main.hpp \
  /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/include/task.h \
  /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/include/list.h \
  /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/include/task.h \
- ../Core/Inc/tlv_parser.hpp ../Core/Inc/cppcrc.hpp \
- ../Core/Inc/traffic_types.hpp ../Core/Inc/traffic_state_machine.hpp
+ ../Core/Inc/tlv_parser.hpp ../Core/Inc/traffic_types.hpp \
+ ../Core/Inc/traffic_state_machine.hpp
 ../Core/Inc/app_main.hpp:
 /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/include/FreeRTOS.h:
 /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/FreeRTOSConfig.h:
@@ -92,6 +92,5 @@ Core/Src/app_main.o: ../Core/Src/app_main.cpp ../Core/Inc/app_main.hpp \
 /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/include/list.h:
 /home/shelton/Documents/Projects/traffic-light-sim/stm32/ThirdParty/FreeRTOS/include/task.h:
 ../Core/Inc/tlv_parser.hpp:
-../Core/Inc/cppcrc.hpp:
 ../Core/Inc/traffic_types.hpp:
 ../Core/Inc/traffic_state_machine.hpp:

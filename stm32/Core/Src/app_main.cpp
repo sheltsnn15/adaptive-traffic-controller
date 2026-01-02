@@ -58,9 +58,11 @@ static void SysViewControlTask(void *arg) {
     vTaskDelay(pdMS_TO_TICKS(300)); // capture window (tune this)
     SEGGER_SYSVIEW_Stop();
 
-    __asm volatile("bkpt #0");
-    for (;;) {
-    }
+    // __asm volatile("bkpt #0");
+    // Don't halt the MCU
+    vTaskDelete(NULL);
+    // for (;;) {
+    // }
 }
 
 // Initialize FreeRTOS objects
@@ -132,6 +134,7 @@ extern "C" void uartRxTask(void *params) {
 
             if (msg_type == 0x01) {
                 counts = tlvParser.getLaneCounts();
+                printf("received a lane count\r\n");
                 xQueueOverwrite(lane_counts_queue, &counts);
             }
         }
@@ -199,15 +202,30 @@ extern "C" void heartbeatTask(void *params) {
     TickType_t last_wake_time = xTaskGetTickCount();
     const TickType_t heartbeat_period = pdMS_TO_TICKS(200);
 
-    while (true) {
-        printf("HB %lu\r\n", (unsigned long)hb.uptime_ms);
+    static uint16_t hb_seq = 0;
 
+    while (true) {
         hb.uptime_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
+        hb.seq = hb_seq++;
+
+        uint8_t st = Traffic::HB_OK;
+
+        if (tlvParser.getCrcFails() > 0) {
+            st |= Traffic::HB_CRC_FAIL_SEEN;
+        }
+        if (tlvParser.getResyncs() > 0) {
+            st |= Traffic::HB_RESYNC_SEEN;
+        }
+
+        hb.status = st;
 
         tx_len = sizeof(tx_buffer);
-
         if (TlvParser::encodeHeartbeat(hb, tx_buffer, tx_len)) {
-            HAL_UART_Transmit(&huart2, tx_buffer, tx_len, 100);
+            // This TX is blocking; ok for a demo heartbeat.
+            HAL_UART_Transmit(&huart2, tx_buffer, static_cast<uint16_t>(tx_len),
+                              100);
+            printf("HB %lu seq=%u st=0x%02X\r\n", (unsigned long)hb.uptime_ms,
+                   (unsigned)hb.seq, (unsigned)hb.status);
         }
 
         vTaskDelayUntil(&last_wake_time, heartbeat_period);

@@ -12,7 +12,7 @@ JUNCTION_TYPE = "x"  # or "y"
 # DEVICE_ID = "esp32-001"
 # BROKER = "localhost"
 # PORT = 1883
-SERIAL_PORT = "/dev/ttyUSB0"
+SERIAL_PORT = "/dev/ttyACM0"
 SERIAL_BAUDRATE = 115200
 
 # Load variables from .env file into environment
@@ -84,7 +84,8 @@ def main():
                 # Small sleep to prevent CPU spinning
                 # TrafficDataPublisher.run_once() already has its timing
                 # via TraCI simulation step
-                time.sleep(0.01)  # 10ms
+                # time.sleep(0.01)  # 10ms
+                time.sleep(1)  # 10ms
 
             except KeyboardInterrupt:
                 print("\n[EXIT] Interrupted by user.")

@@ -1,11 +1,13 @@
-../Core/Inc/tlv_parser.hpp:27:32:const Traffic::LaneCounts& TlvParser::getLaneCounts() const	1
+../Core/Inc/tlv_parser.hpp:55:32:const Traffic::LaneCounts& TlvParser::getLaneCounts() const	1
+../Core/Inc/tlv_parser.hpp:64:14:uint32_t TlvParser::getCrcFails() const	1
+../Core/Inc/tlv_parser.hpp:65:14:uint32_t TlvParser::getResyncs() const	1
 ../Core/Src/app_main.cpp:38:17:void name_traffic_tasks()	3
 ../Core/Src/app_main.cpp:49:13:void SysViewControlTask(void*)	1
-../Core/Src/app_main.cpp:67:17:bool init_traffic_system()	6
-../Core/Src/app_main.cpp:119:17:void uartRxTask(void*)	3
-../Core/Src/app_main.cpp:142:17:void trafficCtrlTask(void*)	2
-../Core/Src/app_main.cpp:171:17:void uartTxTask(void*)	3
-../Core/Src/app_main.cpp:193:17:void heartbeatTask(void*)	2
-../Core/Src/app_main.cpp:218:17:void app_main()	2
-../Core/Src/app_main.cpp:229:1:void __static_initialization_and_destruction_0()	1
-../Core/Src/app_main.cpp:229:1:cpp)	1
+../Core/Src/app_main.cpp:69:17:bool init_traffic_system()	6
+../Core/Src/app_main.cpp:121:17:void uartRxTask(void*)	3
+../Core/Src/app_main.cpp:145:17:void trafficCtrlTask(void*)	2
+../Core/Src/app_main.cpp:174:17:void uartTxTask(void*)	3
+../Core/Src/app_main.cpp:196:17:void heartbeatTask(void*)	4
+../Core/Src/app_main.cpp:236:17:void app_main()	2
+../Core/Src/app_main.cpp:247:1:void __static_initialization_and_destruction_0()	1
+../Core/Src/app_main.cpp:247:1:cpp)	1

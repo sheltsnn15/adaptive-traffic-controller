@@ -25,7 +25,7 @@ SUMO_DATA_PAYLOAD_SIZE = 9  # ts_sec(4) + junction_type(1) + n,s,e,w(4)
 LIGHT_STATE_PAYLOAD_SIZE = (
     4  # current_state(1) + decision_reason(1) + phase_duration(2)
 )
-HEARTBEAT_PAYLOAD_SIZE = 4  # uptime_ms(4)
+HEARTBEAT_PAYLOAD_SIZE = 7  # uptime_ms(4)
 
 # Heartbeat logic
 HEARTBEAT_INTERVAL = 2.0
@@ -238,10 +238,14 @@ class TLVOutputHandler:
 
         try:
             uptime_ms = struct.unpack("<I", payload_bytes[:4])[0]
+            seq = struct.unpack("<H", payload_bytes[4:6])[0]
+            status = payload_bytes[6]
             self.last_heartbeat_rx = time.time()
 
             self.current_payload = {
                 "uptime_ms": uptime_ms,
+                "seq": seq,
+                "status": status,
             }
         except struct.error:
             print("[TLV ERROR] Failed to parse Heartbeat payload")

@@ -122,7 +122,6 @@ main (void)
 
     enableCycleCounter ();
     SEGGER_SYSVIEW_Conf ();
-    // SEGGER_SYSVIEW_Start ();
 
     app_main ();
     vTaskStartScheduler ();
@@ -299,9 +298,7 @@ void
 vApplicationStackOverflowHook (TaskHandle_t xTask, char *pcTaskName)
 {
     printf ("Stack overflow in task: %s\n", pcTaskName);
-    while (1)
-    {
-    }
+    while (1);
 }
 
 void
