@@ -8,10 +8,16 @@
 #include "tlv_parser.hpp"
 #include "traffic_state_machine.hpp"
 #include "traffic_types.hpp"
+
 #include <cstdint>
 #include <cstdio>
 #include <stddef.h>
 #include <stdint.h>
+
+extern "C" void uartRxTask(void *params);
+extern "C" void trafficCtrlTask(void *params);
+extern "C" void uartTxTask(void *params);
+extern "C" void heartbeatTask(void *params);
 
 extern "C" {
 QueueHandle_t uart_rx_byte_q = nullptr;
@@ -27,10 +33,60 @@ TrafficStateMachine stateMachine;
 QueueHandle_t lane_counts_queue = nullptr;
 QueueHandle_t tx_frame_queue = nullptr;
 
+constexpr size_t kMaxFrameBytes = 32;
+constexpr UBaseType_t kLaneQueueDepth = 1;
+constexpr UBaseType_t kRxByteQueueDepth = 128;
+constexpr UBaseType_t kTxQueueDepth = 8;
+
+// Time constants
+constexpr uint32_t kControlPeriodMs = 100;
+constexpr TickType_t kControlPeriodTicks = pdMS_TO_TICKS(kControlPeriodMs);
+constexpr TickType_t kHeartbeatPeriodTicks = pdMS_TO_TICKS(2000);
+constexpr TickType_t kRxActiveWindowTicks = pdMS_TO_TICKS(1000);
+
 struct TxFrame {
     uint16_t len;
-    uint8_t data[32];
+    uint8_t data[kMaxFrameBytes];
 };
+
+inline bool enqueue_best_effort(QueueHandle_t q, const TxFrame &frame) {
+    if (xQueueSend(q, &frame, 0) == pdTRUE) {
+        return true;
+    }
+
+    // full: drop one oldest and retry once
+    TxFrame drop{};
+    (void)xQueueReceive(q, &drop, 0);
+    return (xQueueSend(q, &frame, 0) == pdTRUE);
+}
+
+inline bool make_light_frame(const Traffic::LightStatePayload &cmd,
+                             TxFrame &out) {
+    size_t tx_len = sizeof(out.data);
+    if (!TlvParser::encodeLightState(cmd, out.data, tx_len))
+        return false;
+    out.len = static_cast<uint16_t>(tx_len);
+    return true;
+}
+
+inline bool make_heartbeat_frame(const Traffic::HeartBeat &hb, TxFrame &out) {
+    size_t tx_len = sizeof(out.data);
+    if (!TlvParser::encodeHeartbeat(hb, out.data, tx_len))
+        return false;
+    out.len = static_cast<uint16_t>(tx_len);
+    return true;
+}
+
+inline bool create_task(TaskFunction_t fn, const char *name,
+                        uint16_t stackWords, UBaseType_t prio,
+                        TaskHandle_t *outHandle) {
+    BaseType_t ok = xTaskCreate(fn, name, stackWords, nullptr, prio, outHandle);
+    if (ok != pdPASS) {
+        printf("ERROR: %s task creation failed\r\n", name);
+        return false;
+    }
+    return true;
+}
 
 // heartbeat link-ok detection
 static volatile TickType_t last_lane_rx_tick = 0;
@@ -60,28 +116,24 @@ extern "C" void name_traffic_tasks() {
 static void SysViewControlTask(void *arg) {
     (void)arg;
 
-    SEGGER_SYSVIEW_Start(); // start recording from task context
-
-    vTaskDelay(pdMS_TO_TICKS(1));  // 1 tick is enough
-    name_traffic_tasks();          // emits NameResource events (now recorded)
-    SEGGER_SYSVIEW_SendTaskList(); // makes Context list resolve nicely
-
+    SEGGER_SYSVIEW_Start();         // start recording from task context
+    vTaskDelay(pdMS_TO_TICKS(1));   // 1 tick is enough
+    name_traffic_tasks();           // emits NameResource events (now recorded)
+    SEGGER_SYSVIEW_SendTaskList();  // makes Context list resolve nicely
     vTaskDelay(pdMS_TO_TICKS(300)); // capture window (tune this)
     SEGGER_SYSVIEW_Stop();
 
-    // __asm volatile("bkpt #0");
-    // Don't halt the MCU
+    // __asm volatile("bkpt #0");      // Don't halt the MCU
     vTaskDelete(NULL);
-    // for (;;) {
-    // }
 }
 
 // Initialize FreeRTOS objects
 extern "C" bool init_traffic_system() {
     // Create queues (small sizes - we only need latest data)
-    lane_counts_queue = xQueueCreate(1, sizeof(Traffic::LaneCounts));
-    uart_rx_byte_q = xQueueCreate(128, sizeof(uint8_t));
-    tx_frame_queue = xQueueCreate(8, sizeof(TxFrame));
+    lane_counts_queue =
+        xQueueCreate(kLaneQueueDepth, sizeof(Traffic::LaneCounts));
+    uart_rx_byte_q = xQueueCreate(kRxByteQueueDepth, sizeof(uint8_t));
+    tx_frame_queue = xQueueCreate(kTxQueueDepth, sizeof(TxFrame));
 
     if (!lane_counts_queue || !uart_rx_byte_q || !tx_frame_queue) {
         printf("ERROR: Queue creation failed\r\n");
@@ -89,40 +141,23 @@ extern "C" bool init_traffic_system() {
     }
 
     // Create tasks
-    BaseType_t result;
-
-    result = xTaskCreate(uartRxTask, "UartRx", 1024, nullptr,
-                         tskIDLE_PRIORITY + 3, &uart_rx_task);
-    if (result != pdPASS) {
-        printf("ERROR: UartRx task creation failed\r\n");
+    if (!create_task(uartRxTask, "UartRx", 1024, tskIDLE_PRIORITY + 3,
+                     &uart_rx_task))
         return false;
-    }
-
-    result = xTaskCreate(trafficCtrlTask, "TrafficCtrl", 1024, nullptr,
-                         tskIDLE_PRIORITY + 2, &traffic_ctrl_task);
-    if (result != pdPASS) {
-        printf("ERROR: TrafficCtrl task creation failed\r\n");
+    if (!create_task(trafficCtrlTask, "TrafficCtrl", 1024, tskIDLE_PRIORITY + 2,
+                     &traffic_ctrl_task))
         return false;
-    }
-
-    result = xTaskCreate(uartTxTask, "UartTx", 1024, nullptr,
-                         tskIDLE_PRIORITY + 1, &uart_tx_task);
-    if (result != pdPASS) {
-        printf("ERROR: UartTx task creation failed\r\n");
+    if (!create_task(uartTxTask, "UartTx", 1024, tskIDLE_PRIORITY + 1,
+                     &uart_tx_task))
         return false;
-    }
-
-    result = xTaskCreate(heartbeatTask, "Heartbeat", 512, nullptr,
-                         tskIDLE_PRIORITY, &heartbeat_task);
-    if (result != pdPASS) {
-        printf("ERROR: Heartbeat task creation failed\r\n");
+    if (!create_task(heartbeatTask, "Heartbeat", 512, tskIDLE_PRIORITY,
+                     &heartbeat_task))
         return false;
-    }
 
-    xTaskCreate(SysViewControlTask, "SysViewCtl", 256, nullptr,
-                tskIDLE_PRIORITY + 4, nullptr);
+    // Optional: SysView control task can ignore handle
+    (void)xTaskCreate(SysViewControlTask, "SysViewCtl", 256, nullptr,
+                      tskIDLE_PRIORITY + 4, nullptr);
 
-    // Name tasks in SystemView
     name_traffic_tasks();
     printf("All tasks created successfully\r\n");
     return true;
@@ -131,7 +166,6 @@ extern "C" bool init_traffic_system() {
 // UART Rx Task (High Priority)
 extern "C" void uartRxTask(void *params) {
     (void)params;
-
     uint8_t rx_byte{};
     Traffic::LaneCounts counts{};
 
@@ -146,6 +180,11 @@ extern "C" void uartRxTask(void *params) {
             if (msg_type == 0x01) {
                 counts = tlvParser.getLaneCounts();
                 last_lane_rx_tick = xTaskGetTickCount();
+
+                if (stateMachine.isWatchdogTimeout()) {
+                    stateMachine.clearFault();
+                }
+
                 // printf("received a lane count\r\n");
                 xQueueOverwrite(lane_counts_queue, &counts);
             }
@@ -156,11 +195,9 @@ extern "C" void uartRxTask(void *params) {
 // Traffic Controller Task (Medium Priority)
 extern "C" void trafficCtrlTask(void *params) {
     (void)params;
-
     Traffic::LaneCounts counts;
     Traffic::LightStatePayload light_cmd;
     TickType_t last_wake_time = xTaskGetTickCount();
-    const TickType_t control_period = pdMS_TO_TICKS(100);
 
     while (true) {
         // 1. Check for new lane counts (non-blocking)
@@ -169,35 +206,25 @@ extern "C" void trafficCtrlTask(void *params) {
         }
 
         // 2. Update state machine
-        stateMachine.update(100); // 100ms elapsed
+        stateMachine.update(kControlPeriodMs);
 
         // 3. Get current light command
         light_cmd = stateMachine.getCurrentCommand();
 
         // 4. Encode and send as TxFrame (non-blocking, best-effort)
         TxFrame frame{};
-        size_t tx_len = sizeof(frame.data);
-
-        if (TlvParser::encodeLightState(light_cmd, frame.data, tx_len)) {
-            frame.len = static_cast<uint16_t>(tx_len);
-
-            // Best-effort send; if full, drop one old frame and retry
-            if (xQueueSend(tx_frame_queue, &frame, 0) != pdTRUE) {
-                TxFrame drop{};
-                xQueueReceive(tx_frame_queue, &drop, 0); // Remove oldest
-                xQueueSend(tx_frame_queue, &frame, 0);   // Try again
-            }
+        if (make_light_frame(light_cmd, frame)) {
+            (void)enqueue_best_effort(tx_frame_queue, frame);
         }
 
         // 5. Wait for next control period (100ms)
-        vTaskDelayUntil(&last_wake_time, control_period);
+        vTaskDelayUntil(&last_wake_time, kControlPeriodTicks);
     }
 }
 
 // UART Tx Task (Low Priority)
 extern "C" void uartTxTask(void *params) {
     (void)params;
-
     TxFrame frame{};
 
     while (true) {
@@ -210,11 +237,8 @@ extern "C" void uartTxTask(void *params) {
 // Heartbeat task - sends every 2 seconds
 extern "C" void heartbeatTask(void *params) {
     (void)params;
-
     Traffic::HeartBeat hb{};
     TickType_t last_wake_time = xTaskGetTickCount();
-    const TickType_t heartbeat_period = pdMS_TO_TICKS(2000);
-
     static uint16_t hb_seq = 0;
 
     while (true) {
@@ -225,13 +249,14 @@ extern "C" void heartbeatTask(void *params) {
 
         // link-ok / RX active if we saw LaneCounts recently
         TickType_t now = xTaskGetTickCount();
-        if ((now - last_lane_rx_tick) < pdMS_TO_TICKS(1000)) {
+        if ((now - last_lane_rx_tick) < kRxActiveWindowTicks) {
             st |= Traffic::HB_UART_RX_ACTIVE;
         }
 
         if (tlvParser.getCrcFails() > 0) {
             st |= Traffic::HB_CRC_FAIL_SEEN;
         }
+
         if (tlvParser.getResyncs() > 0) {
             st |= Traffic::HB_RESYNC_SEEN;
         }
@@ -239,22 +264,13 @@ extern "C" void heartbeatTask(void *params) {
         hb.status = st;
 
         TxFrame frame{};
-        size_t tx_len = sizeof(frame.data);
-
-        if (TlvParser::encodeHeartbeat(hb, frame.data, tx_len)) {
-            frame.len = static_cast<uint16_t>(tx_len);
-
-            if (xQueueSend(tx_frame_queue, &frame, 0) != pdTRUE) {
-                TxFrame drop{};
-                xQueueReceive(tx_frame_queue, &drop, 0);
-                xQueueSend(tx_frame_queue, &frame, 0);
-            }
-
+        if (make_heartbeat_frame(hb, frame)) {
+            (void)enqueue_best_effort(tx_frame_queue, frame);
             printf("HB %lu seq=%u st=0x%02X\r\n", (unsigned long)hb.uptime_ms,
                    (unsigned)hb.seq, (unsigned)hb.status);
         }
 
-        vTaskDelayUntil(&last_wake_time, heartbeat_period);
+        vTaskDelayUntil(&last_wake_time, kHeartbeatPeriodTicks);
     }
 }
 
@@ -268,6 +284,7 @@ extern "C" void app_main(void) {
     }
 
     printf("Traffic system initialized - tasks running\r\n");
+
     // Let FreeRTOS scheduler take over
     // Tasks will run automatically
 }

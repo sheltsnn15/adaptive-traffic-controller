@@ -25,7 +25,8 @@ SUMO_DATA_PAYLOAD_SIZE = 9  # ts_sec(4) + junction_type(1) + n,s,e,w(4)
 LIGHT_STATE_PAYLOAD_SIZE = (
     4  # current_state(1) + decision_reason(1) + phase_duration(2)
 )
-HEARTBEAT_PAYLOAD_SIZE = 7  # uptime_ms(4)
+HEARTBEAT_PAYLOAD_SIZE = 7  # uptime_ms(4) + seq(2) + status(1)
+
 
 # Heartbeat logic
 HEARTBEAT_INTERVAL = 2.0
