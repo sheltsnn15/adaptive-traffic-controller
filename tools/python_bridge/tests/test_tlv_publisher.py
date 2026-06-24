@@ -72,18 +72,18 @@ def test_basic_encoding_decoding():
     # Python SENDS LaneCounts (0x01) but doesn't RECEIVE them!
     tlv2 = TLVOutputHandler()
 
-    # Generate a heartbeat frame (from STM32 → Python)
+    # Generate a heartbeat frame (from STM32 -> Python)
     hb_frame = _create_test_heartbeat_frame()
 
-    # Generate a LightState frame (from STM32 → Python)
+    # Generate a LightState frame (from STM32 -> Python)
     lightstate_frame = _create_test_lightstate_frame(
         current_state=0, decision_reason=0, phase_duration=1024
     )
 
     # Decode only what Python receives from STM32
     test_frames = [
-        ("Heartbeat (STM32→Python)", hb_frame),
-        ("LightState (STM32→Python)", lightstate_frame),
+        ("Heartbeat (STM32->Python)", hb_frame),
+        ("LightState (STM32->Python)", lightstate_frame),
     ]
 
     for name, test_frame in test_frames:
@@ -275,14 +275,14 @@ if __name__ == "__main__":
 
     tlv = TLVOutputHandler()
 
-    # Generate a LaneCounts frame (Python → STM32)
+    # Generate a LaneCounts frame (Python -> STM32)
     payload = {
         "timestamp": 1697040000,
         "junction_type": "x",
         "lanes": {"n": 12, "s": 7, "e": 3, "w": 8},
     }
     frame = tlv.create_lanecounts_frame(payload)
-    print(f"LaneCounts frame (Python → STM32): {frame.hex()}")
+    print(f"LaneCounts frame (Python -> STM32): {frame.hex()}")
     print(f"  SOF: {frame[0:2].hex()}")
     print(f"  LEN: {frame[2:4].hex()} = {struct.unpack('<H', frame[2:4])[0]}")
     print(f"  TYPE: {frame[4]:02x}")
@@ -290,10 +290,10 @@ if __name__ == "__main__":
 
     # Generate test frames for receiving
     print(
-        f"\nLightState test frame (STM32 → Python): {_create_test_lightstate_frame(0, 0, 1024).hex()}"
+        f"\nLightState test frame (STM32 -> Python): {_create_test_lightstate_frame(0, 0, 1024).hex()}"
     )
     print(
-        f"Heartbeat test frame (STM32 → Python): {_create_test_heartbeat_frame().hex()}"
+        f"Heartbeat test frame (STM32 -> Python): {_create_test_heartbeat_frame().hex()}"
     )
 
     print("\n" + "=" * 60 + "\n")

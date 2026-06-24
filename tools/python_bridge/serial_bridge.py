@@ -57,7 +57,7 @@ class SerialBridge:
             frame = self.tlv.create_lanecounts_frame(payload)
             self.serial.write(frame)
             self.serial.flush()
-            print(f"[Python→STM32] Sent: {frame.hex()}")
+            print(f"[Python->STM32] Sent: {frame.hex()}")
             return True
         except Exception as e:
             print(f"[Serial] Send error: {e}")
@@ -78,9 +78,9 @@ class SerialBridge:
                     # Handle received frames
                     for frame in frames:
                         if frame["type"] == 0x02:  # LightState
-                            print(f"[STM32→Python] LightState: {frame['payload']}")
+                            print(f"[STM32->Python] LightState: {frame['payload']}")
                         elif frame["type"] == 0x03:  # Heartbeat
-                            print(f"[STM32→Python] Heartbeat: {frame['payload']}")
+                            print(f"[STM32->Python] Heartbeat: {frame['payload']}")
 
                 time.sleep(0.001)  # Small sleep
 

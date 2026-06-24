@@ -1,7 +1,7 @@
 # ThirdParty/SEGGER/CMakeLists.txt
-#   - RTT + SystemView core      → SEGGER/
-#   - FreeRTOS glue + config     → OS/, Config/
-#   - One tiny ASM file for RTT  → SEGGER/
+#   - RTT + SystemView core      -> SEGGER/
+#   - FreeRTOS glue + config     -> OS/, Config/
+#   - One tiny ASM file for RTT  -> SEGGER/
 
 cmake_minimum_required(VERSION 3.16)
 

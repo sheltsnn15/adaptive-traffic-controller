@@ -8,9 +8,9 @@
   - [**2. LEN Semantics**](#2-len-semantics)
   - [**3. CRC Specification**](#3-crc-specification)
   - [**4. Message Types**](#4-message-types)
-    - [**`0x01 LaneCounts`** (SUMO → STM32)](#0x01-lanecounts-sumo--stm32)
-    - [**`0x02 LightState`** (STM32 → SUMO)](#0x02-lightstate-stm32--sumo)
-    - [**`0x03 Heartbeat`** (STM32 → SUMO)](#0x03-heartbeat-stm32--sumo)
+    - [**`0x01 LaneCounts`** (SUMO -> STM32)](#0x01-lanecounts-sumo--stm32)
+    - [**`0x02 LightState`** (STM32 -> SUMO)](#0x02-lightstate-stm32--sumo)
+    - [**`0x03 Heartbeat`** (STM32 -> SUMO)](#0x03-heartbeat-stm32--sumo)
   - [**5. State Definitions**](#5-state-definitions)
     - [**Traffic Light States:**](#traffic-light-states)
     - [**Decision Reasons:**](#decision-reasons)
@@ -45,11 +45,11 @@
 - **Initial Value**: 0xFFFF
 - **Coverage**: CRC covers `LEN | TYPE | PAYLOAD` (does NOT include SOF)
 - **Final XOR**: 0x0000
-- **Recovery**: Invalid LEN or CRC → advance 1 byte and re-seek SOF
+- **Recovery**: Invalid LEN or CRC -> advance 1 byte and re-seek SOF
 
 ### **4. Message Types**
 
-#### **`0x01 LaneCounts`** (SUMO → STM32)
+#### **`0x01 LaneCounts`** (SUMO -> STM32)
 
 ```c
 uint32 ts_sec;          // LE (UNIX seconds)
@@ -60,9 +60,9 @@ uint8 e;               // East approach vehicle count (0-255)
 uint8 w;               // West approach vehicle count (0-255)
 ```
 
-**Total payload**: 9 bytes → `LEN = 12 (0x000C)`
+**Total payload**: 9 bytes -> `LEN = 12 (0x000C)`
 
-#### **`0x02 LightState`** (STM32 → SUMO)
+#### **`0x02 LightState`** (STM32 -> SUMO)
 
 ```c
 uint8 current_state;    // 0=NS_GREEN, 1=NS_YELLOW, 2=EW_GREEN, 3=EW_YELLOW, 4=ALL_RED
@@ -70,9 +70,9 @@ uint8 decision_reason;  // 0=fixed_time, 1=adaptive_extension, 2=emergency, 3=fa
 uint16 phase_duration;  // LE, in 100ms units (e.g., 80 = 8.0s)
 ```
 
-**Total payload**: 4 bytes → `LEN = 7 (0x0007)`
+**Total payload**: 4 bytes -> `LEN = 7 (0x0007)`
 
-#### **`0x03 Heartbeat`** (STM32 → SUMO)
+#### **`0x03 Heartbeat`** (STM32 -> SUMO)
 
 ```c
 uint32 uptime_ms;       // LE, system uptime in milliseconds
@@ -80,7 +80,7 @@ uint16 seq;             // LE, increments every heartbeat
 uint8 status;           // bitfield flags (see below)
 ```
 
-**Total payload**: 7 bytes → `LEN = 10 (0x000A)`
+**Total payload**: 7 bytes -> `LEN = 10 (0x000A)`
 
 ### **5. State Definitions**
 
@@ -138,8 +138,8 @@ bool should_extend = (extend_votes >= 2) &&
 
 **Transitions:**
 
-- After `MIN_GREEN_MS`, if `should_extend` → extend green by 4s
-- Hard cap at `MAX_GREEN_MS` → force transition to Yellow
+- After `MIN_GREEN_MS`, if `should_extend` -> extend green by 4s
+- Hard cap at `MAX_GREEN_MS` -> force transition to Yellow
 - Extensions occur in 4s steps with 2-cycle hysteresis
 
 ### **7. Frame Examples**

@@ -4,9 +4,9 @@ import struct
 from typing import Optional, Dict, Any
 
 # Message types
-MSG_TYPE_SUMO_DATA = 0x01  # Python → STM32 (LaneCounts)
-MSG_TYPE_LIGHT_STATE = 0x02  # STM32 → Python
-MSG_TYPE_HEARTBEAT = 0x03  # Python → STM32 (optional)
+MSG_TYPE_SUMO_DATA = 0x01  # Python -> STM32 (LaneCounts)
+MSG_TYPE_LIGHT_STATE = 0x02  # STM32 -> Python
+MSG_TYPE_HEARTBEAT = 0x03  # Python -> STM32 (optional)
 
 # Frame structure offsets
 OFFSET_SOF = 0  # bytes 0-1: 0xAA55
@@ -44,7 +44,7 @@ crc16_ccitt = setup_crc16_ccitt()
 
 class TLVOutputHandler:
     def __init__(self) -> None:
-        # Receiver state (parsing STM32 → Python)
+        # Receiver state (parsing STM32 -> Python)
         self.state = "SEEKING_SOF"
         self.buffer = bytearray()
         self.expected_payload_len = 0
@@ -61,7 +61,7 @@ class TLVOutputHandler:
         self.crc_fail = 0
         self.resyncs = 0
 
-    # ================== TRANSMITTER (Python → STM32) ==================
+    # ================== TRANSMITTER (Python -> STM32) ==================
 
     def create_lanecounts_frame(self, payload: Dict[str, Any]) -> bytes:
         # Create LaneCounts frame (0x01) for sending to STM32
@@ -111,7 +111,7 @@ class TLVOutputHandler:
 
         return bytes(frame)
 
-    # ================== RECEIVER (STM32 → Python) ==================
+    # ================== RECEIVER (STM32 -> Python) ==================
 
     def process_bytes(self, data: bytes) -> list:
         # Process a chunk of bytes, return list of completed frames

@@ -1,11 +1,10 @@
-
 ## **Architecture**
 
 **Strengths I see:**
 
 - **Clean interfaces** (IStateMachine, ICommunicator) - great for testing
 - **Proper abstraction layers** - hardware details hidden
-- **RTOS integration** - TaskManager handles FreeRTOS specifics  
+- **RTOS integration** - TaskManager handles FreeRTOS specifics
 - **Protocol separation** - TLV parser is self-contained
 - **Type safety** - strong enums and packed structs
 - **Adaptive logic ready** - extension conditions built in
@@ -27,7 +26,7 @@
 ### **3. Data Flow Between Components**
 
 ```
-UartManager → TaskManager (queues) → TrafficStateMachine → TaskManager → UartManager
+UartManager -> TaskManager (queues) -> TrafficStateMachine -> TaskManager -> UartManager
 ```
 
 - How do these components discover each other?
@@ -46,7 +45,7 @@ UartManager → TaskManager (queues) → TrafficStateMachine → TaskManager →
 If you were to implement `TaskManager::initialize()`, what would need to happen?
 
 1. **Queue creation** - what sizes and types?
-2. **Task creation** - what stack sizes and priorities?  
+2. **Task creation** - what stack sizes and priorities?
 3. **Component wiring** - how do tasks get their dependencies?
 4. **Startup sequence** - what order should tasks start?
 
@@ -61,5 +60,5 @@ If you were to implement `TaskManager::initialize()`, what would need to happen?
 **Would you prefer:**
 
 - **Top-down**: Start with TaskManager and work downward
-- **Bottom-up**: Start with traffic_types and work upward  
+- **Bottom-up**: Start with traffic_types and work upward
 - **Vertical slices**: Get one complete flow working first

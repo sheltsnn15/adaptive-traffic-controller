@@ -189,7 +189,7 @@ void TlvParser::resetForResync() {
 
 bool TlvParser::encodeLightState(const Traffic::LightStatePayload &cmd,
                                  uint8_t *buffer, size_t &len) {
-    // STM32 → Python: LightState (0x02)
+    // STM32 -> Python: LightState (0x02)
     constexpr auto ls_spec = lightStateSpec();
     if (len < ls_spec.frame_size()) {
         return false;
